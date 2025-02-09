@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
@@ -8,8 +6,7 @@ from aiogram import Router
 import state as st
 import database as db
 import keyboard as kb
-from database import current_datetime
-from state import AddTask
+
 
 router = Router()
 
@@ -37,13 +34,14 @@ async def process_get_course_tittle(message: Message, state: FSMContext):
 async def process_get_list_users(message: Message, state: FSMContext):
     list_users = message.text.split('\n')
     data = await state.get_data()
-    await db.add_users(list_users, data['course_tittle'])
+    course_id = await db.get_course_id(data['course_tittle'])
+    await db.add_users(list_users, course_id)
     await message.answer('Пользователи были успешно добавлены', reply_markup=kb.command_menu_admin)
 
 
-@router.message(st.AddTask.get_task_tittle)
-async def process_get_task_tittle(message: Message, state: FSMContext):
-    await state.update_data(task_tittle=message.text)
+@router.message(st.AddTask.get_task_title)
+async def process_get_task_title(message: Message, state: FSMContext):
+    await state.update_data(task_title=message.text)
     await message.answer('Название было успешно записано. Теперь отправь мне видеозапись урока')
     await state.set_state(st.AddTask.get_video)
 
@@ -57,25 +55,14 @@ async def process_get_video(message: Message, state: FSMContext):
 
 @router.message(st.AddTask.get_abstract)
 async def process_get_abstract(message: Message, state: FSMContext):
-    year = datetime.now().year
-    month = datetime.now().month
     await state.update_data(abstract_id=message.document.file_id)
-    await message.answer('Выбери параметры домашней работы',
-                         reply_markup=kb.generate_calendar(year, month))
+    await message.answer('Добавь условия и ответы в гугл таблицу', reply_markup=kb.send_exercise )
     await state.set_state(st.AddTask.verification)
-
-
-# @router.message(st.AddTask.verification)
-# async def process_verification(message: Message, state: FSMContext):
-#     await message.answer('Выбери параметры домашней работы',
-#                          reply_markup=kb.choose_parameters_task('Автоматическая проверка', datetime.now()))
-#     await state.set_state(AddTask.get_homework)
 
 
 # @router.message(st.AddTask.get_homework)
 # async def process_get_homework(message: Message, state: FSMContext):
 #     state_data = await state.get_data()
-#     await db.add_task(state_data['task_tittle'], state_data['selected_block'])
 #     task_id = await db.get_task_id()
 #     if state_data['manual_verification']:
 #         condition = message.text
