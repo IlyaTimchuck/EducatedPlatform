@@ -16,6 +16,7 @@ async def create_db() -> None:
         await con.execute("DROP TABLE IF EXISTS exercises")
         await con.execute("DROP TABLE IF EXISTS learning_progress")
         await con.execute("DROP TABLE IF EXISTS sessions")
+        await con.execute("DROP TABLE IF EXISTS changed_deadline")
 
         await con.execute('''CREATE TABLE IF NOT EXISTS unregistered (
             username TEXT,
@@ -25,8 +26,8 @@ async def create_db() -> None:
             username TEXT,
             user_id INTEGER,
             course_id INTEGER,
+            timezone STRING,
             date_of_joining TEXT,
-            timezone TEXT,
             lives INTEGER,
             role TEXT)''')
 
@@ -66,8 +67,14 @@ async def create_db() -> None:
             session_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             task_id INTEGER,
+            is_completed BOOL,
             session_start TEXT,
             session_end TEXT)''')
+
+        await con.execute('''CREATE TABLE IF NOT EXISTS changed_deadlines (
+            user_id INTEGER,
+            task_id INTEGER,
+            deadline STRING)''')
 
         await con.commit()
 
@@ -97,17 +104,19 @@ async def user_is_unregistered(username: str) -> bool:
         return bool(row[0])
 
 
-async def registration_user(username: str, user_id: int, role: str) -> None:
+async def registration_user(username: str, user_id: int, timezone: str, role: str) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         date_of_joining = current_datetime()
         lives = 3
         cursor = await con.execute('SELECT course_id FROM unregistered WHERE username = ?', (username,))
-        course_id = (await cursor.fetchone())[0]
-        await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)',
-                          (username, user_id, course_id, date_of_joining, lives, role))
-        await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))
-        await con.commit()
-
+        print(cursor)
+        if cursor is not None:
+            course_id = (await cursor.fetchone())[0]
+            await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)',
+                          (username, user_id, course_id, timezone, date_of_joining, lives, role))
+            await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))
+            await con.commit()
+        return cursor
 
 # Other function
 async def get_data_user(user_id: int) -> dict:
@@ -291,11 +300,11 @@ async def get_progress_user(task_id: int, session_id: int = None) -> dict:
 
 
 async def add_progress_user(user_id: int, task_id: int, homework: dict, results: dict, session_start: str,
-                            session_end: str) -> None:
+                            session_end: str, is_completed: bool = False) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         cursor = await con.execute(
-            'INSERT INTO sessions (user_id, task_id, session_start, session_end) VALUES (?, ?, ?, ?)',
-            (user_id, task_id, session_start, session_end)
+            'INSERT INTO sessions (user_id, task_id, is_completed, session_start, session_end) VALUES (?, ?, ?, ?, ?)',
+            (user_id, task_id, is_completed, session_start, session_end)
         )
         session_id = cursor.lastrowid
 
@@ -324,3 +333,45 @@ async def get_last_session(user_id: int, task_id: int) -> dict:
         async with con.execute(query, (user_id, task_id)) as cursor:
             row = await cursor.fetchone()
             return dict(row) if row else {}
+
+
+async def get_all_users() -> list:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        async with con.execute('SELECT * FROM users') as cursor:
+            result = await cursor.fetchall()
+            return [dict(row) for row in result] if result else []
+
+
+async def get_right_session(task_id: int) -> list:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        async with con.execute('SELECT * FROM sessions WHERE task_id = ? AND is_completed = 1', (task_id,)) as cursor:
+            result = cursor.fetchall()
+            return [dict(row) for row in result] if result else []
+
+
+async def get_changed_deadline(task_id: int) -> list:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        async with con.execute('SELECT * FROM changed_deadline WHERE task_id = ?', (task_id,)) as cursor:
+            result = cursor.fetchall()
+            return [dict(row) for row in result] if result else []
+
+
+async def get_next_deadline_info() -> dict | None:
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        query = """
+            SELECT task_id, deadline
+            FROM tasks
+            WHERE deadline >= ?
+            ORDER BY deadline ASC
+            LIMIT 1
+        """
+        async with con.execute(query, (now,)) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return dict(row)
+            return None

@@ -1,8 +1,8 @@
 from aiogram.fsm.state import StatesGroup, State
 
 class Registration(StatesGroup):
-    get_info_user = State()
-    registration_user = State()
+    get_name_user = State()
+    get_location_user = State()
 
 class AddUsers(StatesGroup):
     choose_course = State()

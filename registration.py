@@ -1,7 +1,8 @@
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
-
+from timezonefinder import TimezoneFinder
+from geopy.geocoders import Nominatim
 import state as st
 import database as db
 import keyboard as kb
@@ -9,32 +10,56 @@ import keyboard as kb
 router = Router()
 
 
-@router.message(st.Registration.get_info_user)
-async def confirm_registration(message: Message, state: FSMContext):
-    await state.update_data(username=message.text)
-    data = await state.get_data()
-    if await db.user_is_unregistered(data['username']):
-        await message.answer(
-            'Теперь отправь мне свое местоположение или введи название ближайшего большого города. Это нужно для правильного отображения дедлайнов',
-            reply_markup=kb.location_button)
-        await state.set_state(st.Registration.registration_user)
-    else:
-        await message.answer(
-            'Кажется, ты не был добавлен админом. Проверь правильность введенного имени или свяжись с админом :(')
+@router.message(st.Registration.get_name_user)
+async def getting_name_user(message: Message, state: FSMContext):
+    name_user = message.text
+    await state.update_data(name_user=name_user)
+    await message.answer(
+        'Теперь отправь мне свою локацию или название ближайшего большого города. Это нужно для корректного отображения дедлайнов',
+        reply_markup=kb.location_button)
+    await state.set_state(st.Registration.get_location_user)
 
 
-@router.message(st.Registration.registration_user)
+@router.message(st.Registration.get_location_user)
 async def registration_user(message: Message, state: FSMContext):
     data = await state.get_data()
-    if message.text:
-        pass
-    elif message.location:
+    latitude, longitude = None, None
+    print(message.from_user.id)
+
+    # Если пользователь отправил геолокацию, используем её
+    if message.location:
         latitude = message.location.latitude
         longitude = message.location.longitude
-    # if message.from_user.id == 795508218:
-    #     await db.registration_user(data['username'], message.from_user.id, 'admin')
-    #     await message.answer('Сэр, Вы были распознаны как создатель этого бота, вот ваша палень админа',
-    #                          reply_markup=kb.command_menu_admin)
-    #     await state.clear()
-    # else:
-    #     await db.registration_user(data['username'], message.from_user.id, 'student')
+    # Если отправлен текст, считаем, что это название города и проводим геокодинг
+    elif message.text:
+        geolocator = Nominatim(user_agent="timezone_app")
+        location = geolocator.geocode(message.text)
+        if location is None:
+            await message.answer("Город не найден. Пожалуйста, проверьте название и попробуйте еще раз.")
+            return
+        latitude = location.latitude
+        longitude = location.longitude
+    else:
+        await message.answer("Пожалуйста, отправьте название города или свою геолокацию.")
+        return
+
+    # Определяем часовой пояс по координатам
+    tf = TimezoneFinder()
+    timezone_name = tf.timezone_at(lat=latitude, lng=longitude)
+    if timezone_name is None:
+        await message.answer("Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
+        return
+    role = 'student' if message.from_user.id != 795508218 else 'admin'
+    # Регистрируем пользователя в базе данных
+    result = await db.registration_user(data['name_user'], message.from_user.id, timezone_name, role)
+    if result:
+        await message.answer(f'Твой часовой пояс распознан как {timezone_name}', reply_markup=kb.command_menu_student)
+        await state.clear()
+        return
+    elif role == 'admin':
+        await message.answer('Вы админ', reply_markup=kb.command_menu_admin)
+    else:
+        await message.answer(
+            'Ты не был добавлен админом на курс, попробуй проверить введенные данные или обратиться к администратору :(')
+        await state.clear()
+        await state.set_state(st.Registration.get_name_user)

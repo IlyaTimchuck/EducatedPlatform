@@ -11,7 +11,7 @@ router = Router()
 @router.message(Command(commands=['start']))
 async def start(message: types.Message, state: FSMContext):
     await message.answer('Привет! Чтобы начать обучение отправь мне свои ФИО')
-    await state.set_state(st.Registration.get_info_user)
+    await state.set_state(st.Registration.get_name_user)
 
 @router.message(Command(commands=['command_menu']))
 async def command_menu(message: types.Message):

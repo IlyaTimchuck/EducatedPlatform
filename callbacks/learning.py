@@ -139,12 +139,13 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
     session_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
-                               state_data.get('results', {}), state_data['session_start'], session_end)
     quotient = int((state_data['quantity_right_answers'] / state_data['quantity_exercise']) * 100)
+    is_completed = quotient >= 90
+    await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
+                               state_data.get('results', {}), state_data['session_start'], session_end, is_completed)
     await callback_query.answer(
-        'Домашняя работа была принята' if quotient >= 90 else 'Порог не был пройден. Нужно минимум 90%',
-        show_alert=False if quotient >= 90 else True)
+        'Домашняя работа была принята' if is_completed else 'Порог не был пройден. Нужно минимум 90%',
+        show_alert=False if is_completed else True)
     await callback_query.message.delete()
     await callback_query.bot.edit_message_media(
         chat_id=callback_query.message.chat.id,

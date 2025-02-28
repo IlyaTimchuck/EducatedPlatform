@@ -6,7 +6,7 @@ import database as db
 
 
 async def main() -> None:
-    bot = Bot('7667517965:AAFX8LqQvAd4VVvvzVccXj0Rih0X0LDZHzY')
+    bot = Bot('7667517965:AAGehj0I0nCwYFLBYTlpG2a4D5YQElh7qK0')
     dp = Dispatcher()
     setup_routers(dp)
     setup_routers_callbacks(dp)
