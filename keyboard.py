@@ -1,6 +1,8 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, Message
+
 import database as db
+import state as st
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 import calendar
 
@@ -144,6 +146,39 @@ async def choose_course_reply():
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
+async def send_command_menu(user_id: int):
+    user_data = await db.get_data_user(user_id)
+    if user_data['role'] == 'student':
+        command_menu = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
+            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='last_lesson')],
+            [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
+        ])
+        lives = user_data['lives']
+        deadline_today = await db.get_today_deadline(user_id)
+        text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
+        if deadline_today:
+            text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}'
+        else:
+            text_message += 'Дедлайны сегодня: -'
+        return text_message, command_menu
+    elif user_data['role'] == 'admin':
+        command_menu = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text='Добавить урок', callback_data='add_lesson')],
+            [InlineKeyboardButton(text='Добвить пользователей', callback_data='add_users')]
+        ])
+        return command_menu
+
+
+async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> InlineKeyboardMarkup:
+    button = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Приступить к выполнению задания', callback_data=f'open_task:{course_id}:{task_id}')]
+    ])
+    # await state.set_state(st.MappingExercise.mapping_task)
+    # await state.update_data(course_id=course_id, block_id=block_id)
+    return button
+
+
 back_button_student = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Назад', callback_data='back_student')]
 ])
@@ -152,16 +187,6 @@ back_button_admin = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Назад', callback_data='back_admin')]
 ])
 
-command_menu_student = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
-    [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='last_lesson')],
-    [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
-])
-
-command_menu_admin = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Добавить урок', callback_data='add_lesson')],
-    [InlineKeyboardButton(text='Добвить пользователей', callback_data='add_users')]
-])
 
 send_homework_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Редактировать введённые данные', callback_data='change_homework')],

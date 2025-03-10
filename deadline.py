@@ -1,48 +1,78 @@
-from aiogram import Router
-from geopy.geocoders import Nominatim
-from datetime import datetime, timedelta
+import asyncio
+from datetime import datetime
 
+from aiogram.fsm.context import FSMContext
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from aiogram.types import Message
+from aiogram import Bot
 
-import pytz
+import state as st
 import database as db
 import keyboard as kb
-import logging
-import asyncio
-
-router = Router()
 
 
-
-async def current_deadline(user_id, lives, new_deadline):
-    """
-    Обновляет данные пользователя в БД: количество жизней и новый дедлайн.
-    """
-    # Реализуйте обновление в вашей базе данных
-    pass
+async def check_deadlines(timezone_id: int):
+    progress_users = await db.get_due_tasks_for_timezone(timezone_id, datetime.now().strftime("%Y-%m-%d"))
+    if progress_users:
+        await db.update_deadlines_and_lives_bulk(progress_users, timezone_id)
+    print('Проверка была выполнена')
 
 
-async def homework_monitor():
-    """Фоновая задача, которая проверяет дедлайны домашних заданий."""
-    while True:
-        logging.info("Запуск проверки дедлайнов домашних заданий.")
+async def send_deadline_reminder(timezone_id, bot: Bot):
+    deadline_today = await db.get_today_deadline(user_id=None, timezone_id=timezone_id)
+    print(deadline_today)
+    if deadline_today:
+        for deadline_data in deadline_today:
 
-        now = datetime.utcnow()
+            text_message = f"Привет! Напоминаю, что сегодня в 0:00 дедлайн\nНазвание урока: {deadline_data['task_title']}"
+            await bot.send_message(deadline_data['user_id'], text_message,
+                                   reply_markup=await kb.start_the_task_from_the_reminder(deadline_data['course_id'],
+                                                                                          deadline_data['task_id']))
 
-        # Получаем список всех пользователей
-        users = await db.get_all_users()
-        changed_deadline = await db.get_changed_deadline(...)
-        right_decisions = await db.get_right_session(...)
-        for user_info in users:
-            timezone = datetime.now(user_info['timezone'])
-            user_deadline = user_info['deadline']  # Дедлайн должен быть объектом datetime
-            if now >= user_deadline:
-                # Если задание не выполнено, снимаем жизнь и переносим дедлайн на следующий день
-                new_deadline = user_deadline + timedelta(days=1)
-                new_lives = user_info['lives'] - 1
 
-                await update_user(user_info['id'], new_lives, new_deadline)
-                logging.info(
-                    f"Пользователю {user_info['id']} снята жизнь. Новый дедлайн: {new_deadline}"
-                )
+async def update_timezone_jobs(scheduler, bot: Bot):
+    """Функция для обновления расписания задач для всех часовых поясов."""
+    timezones = await db.get_timezones()
+    print("Updating timezone jobs for:", timezones)
 
-        await asyncio.sleep(60)
+    for job in scheduler.get_jobs():
+        if job.id.startswith("task_") or job.id.startswith("reminder_"):
+            scheduler.remove_job(job.id)
+
+    for timezone_id in timezones:
+        tz_value = timezones[timezone_id]
+        scheduler.add_job(
+            check_deadlines,
+            trigger=CronTrigger(hour=0, minute=0, timezone=tz_value),
+            args=[timezone_id],
+            id=f"task_{timezone_id}"
+        )
+
+        scheduler.add_job(
+            send_deadline_reminder,
+            trigger=CronTrigger(hour=5, minute=1, timezone=tz_value),
+            args=[timezone_id, bot],
+            id=f"reminder_{timezone_id}"
+        )
+    print("Timezone jobs updated.")
+
+
+async def setup_monitoring(bot: Bot):
+    """Основная функция, которая инициализирует планировщик и устанавливает глобальное обновление"""
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    await update_timezone_jobs(scheduler, bot)
+
+    scheduler.add_job(
+        update_timezone_jobs,
+        trigger=CronTrigger(hour=5, minute=0, timezone="Europe/Moscow"),
+        args=[scheduler, bot],
+        id="global_update"
+    )
+
+    await asyncio.Event().wait()
+
+
+if __name__ == '__main__':
+    asyncio.run(setup_monitoring())

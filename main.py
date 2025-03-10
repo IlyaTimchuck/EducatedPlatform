@@ -1,8 +1,10 @@
-from asyncio import run
+from asyncio import run, create_task, CancelledError
 from aiogram import Bot, Dispatcher
 from handlers.__init__ import setup_routers
 from callbacks.__init__ import setup_routers_callbacks
+from deadline import setup_monitoring
 import database as db
+
 
 
 async def main() -> None:
@@ -14,10 +16,13 @@ async def main() -> None:
     await db.create_course('Тестовый')
     course_id = await db.get_course_id('Тестовый')
     await db.add_users(['f'], course_id)
-    task_id = await db.add_task('Тестовый', course_id, 'Автоматическая проверка',
+    await db.add_users(['try_user'], course_id)
+    # await db.registration_user('try_user', 123, 'Europe/Moscow', 'admin')
+    monitor_task = create_task(setup_monitoring(bot))
+    task_id = await db.add_task('Тестовый 1', course_id, 'Автоматическая проверка',
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
-                                True, '31-01-2025')
+                                True, '2025-03-10')
     await db.add_exercise(task_id,
                           'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',
                           '12')
@@ -32,10 +37,21 @@ IP-адрес сети: 192.168.248.176
 Необходимо узнать, сколько в этой сети IP-адресов, для которых количество единиц и нулей в двоичной записи IP-адреса одинаково.''',
                           '43')
 
-
+    # task_id1 = await db.add_task('Тестовый 2', course_id, 'Автоматическая проверка',
+    #                             'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
+    #                             'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
+    #                             True, '2025-03-10')
+    # await db.add_exercise(task_id1,
+    #                       '''Хуй попа жопа''',
+    #                       'сиси')
     try:
         await dp.start_polling(bot)
     finally:
+        monitor_task.cancel()
+        try:
+            await monitor_task
+        except CancelledError:
+            print("Monitoring task cancelled")
         await bot.session.close()
 
 

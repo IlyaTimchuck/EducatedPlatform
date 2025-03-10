@@ -16,8 +16,9 @@ router = Router()
 async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     if callback_query.data == 'back_student':
+        lives = (await db.get_data_user(callback_query.from_user.id))['lives']
         if await state.get_state() is None:
-            await callback_query.message.edit_text(text='Вот твое командное меню', reply_markup=kb.command_menu_student)
+            await callback_query.message.edit_text(text='Твоё количе', reply_markup=kb.command_menu_student)
         else:
             await callback_query.message.delete()
             await callback_query.message.answer(text='Вот твое командное меню', reply_markup=kb.command_menu_student)

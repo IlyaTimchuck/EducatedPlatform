@@ -24,8 +24,6 @@ async def getting_name_user(message: Message, state: FSMContext):
 async def registration_user(message: Message, state: FSMContext):
     data = await state.get_data()
     latitude, longitude = None, None
-    print(message.from_user.id)
-
     # Если пользователь отправил геолокацию, используем её
     if message.location:
         latitude = message.location.latitude
@@ -49,15 +47,12 @@ async def registration_user(message: Message, state: FSMContext):
     if timezone_name is None:
         await message.answer("Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
         return
-    role = 'student' if message.from_user.id != 795508218 else 'admin'
+    role = 'student' #if message.from_user.id != 795508218 else 'admin'
     # Регистрируем пользователя в базе данных
     result = await db.registration_user(data['name_user'], message.from_user.id, timezone_name, role)
     if result:
-        await message.answer(f'Твой часовой пояс распознан как {timezone_name}', reply_markup=kb.command_menu_student)
-        await state.clear()
-        return
-    elif role == 'admin':
-        await message.answer('Вы админ', reply_markup=kb.command_menu_admin)
+        text_message, keyboard = await kb.send_command_menu(message.from_user.id)
+        await message.answer(text_message, reply_markup=keyboard)
     else:
         await message.answer(
             'Ты не был добавлен админом на курс, попробуй проверить введенные данные или обратиться к администратору :(')

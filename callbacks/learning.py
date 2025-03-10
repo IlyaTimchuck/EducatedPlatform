@@ -65,8 +65,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
             caption=text_message),
         reply_markup=kb.mapping_task(course_id, task_data['block_id'])
     )
-    await state.update_data(task_data=task_data, task_message_id=sent_message.message_id)
-
+    await state.update_data(task_data=task_data, task_message_id=sent_message.message_id, course_id=course_id)
 
 @router.callback_query(F.data == 'open_homework')
 async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
@@ -138,7 +137,7 @@ async def mapping_exercise(callback_query: CallbackQuery, state: FSMContext):
 async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
-    session_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    session_end = datetime.now().strftime("%Y-%m-%d")
     quotient = int((state_data['quantity_right_answers'] / state_data['quantity_exercise']) * 100)
     is_completed = quotient >= 90
     await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
