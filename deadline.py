@@ -73,6 +73,3 @@ async def setup_monitoring(bot: Bot):
 
     await asyncio.Event().wait()
 
-
-if __name__ == '__main__':
-    asyncio.run(setup_monitoring())

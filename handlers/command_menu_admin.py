@@ -36,7 +36,8 @@ async def process_get_list_users(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = await db.get_course_id(data['course_tittle'])
     await db.add_users(list_users, course_id)
-    await message.answer('Пользователи были успешно добавлены', reply_markup=kb.command_menu_admin)
+    _, keyboard = kb.send_command_menu(message.from_user.id)
+    await message.answer('Пользователи были успешно добавлены', reply_markup=keyboard)
 
 
 @router.message(st.AddTask.get_task_title)

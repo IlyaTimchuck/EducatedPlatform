@@ -28,7 +28,7 @@ async def mapping_list_tasks(user_id: int, course_id: int, block_id: int) -> Inl
     return builder.as_markup()
 
 
-def mapping_homework(quantity_exercise: int, current_exercise: int) -> InlineKeyboardMarkup:
+async def mapping_homework(quantity_exercise: int, current_exercise: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if current_exercise == 1:
         builder.add(
@@ -50,7 +50,7 @@ def mapping_homework(quantity_exercise: int, current_exercise: int) -> InlineKey
     return builder.as_markup()
 
 
-def mapping_task(course_id, block_id) -> InlineKeyboardMarkup:
+async def mapping_task(course_id, block_id) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')],
         [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')],
@@ -90,7 +90,7 @@ async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeybo
     return builder.as_markup()
 
 
-def choose_parameters_task(deadline) -> InlineKeyboardMarkup:
+async def choose_parameters_task(deadline) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text='Автоматическая проверка', callback_data=f'verif:auto:{deadline}'),
                           InlineKeyboardButton(text='Ручная проверка', callback_data=f'verif:manual:{deadline}')]
@@ -98,7 +98,7 @@ def choose_parameters_task(deadline) -> InlineKeyboardMarkup:
     return keyboard
 
 
-def generate_calendar(year: int, month: int) -> InlineKeyboardMarkup:
+async def generate_calendar(year: int, month: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text="\u2190", callback_data=f"prev_month:{year}:{month}"),
@@ -116,7 +116,7 @@ def generate_calendar(year: int, month: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def to_change_block(current_block):
+async def to_change_block(current_block):
     change_block_buttons = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Предыдущий блок', callback_data=f'reduce_block:{current_block}'),
          InlineKeyboardButton(text='Следующий блок', callback_data=f'increase_block:{current_block}')],

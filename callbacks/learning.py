@@ -63,7 +63,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=kb.mapping_task(course_id, task_data['block_id'])
+        reply_markup=await kb.mapping_task(course_id, task_data['block_id'])
     )
     await state.update_data(task_data=task_data, task_message_id=sent_message.message_id, course_id=course_id)
 
@@ -81,7 +81,7 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     else:
         text_message = homework[current_exercise][0]
     sent_message = await callback_query.message.answer(text=text_message,
-                                                       reply_markup=kb.mapping_homework(quantity_exercise,
+                                                       reply_markup= await kb.mapping_homework(quantity_exercise,
                                                                                         current_exercise))
     await state.update_data(quantity_exercise=quantity_exercise, homework=homework, current_exercise=current_exercise,
                             current_message_id=sent_message.message_id,
@@ -124,7 +124,7 @@ async def mapping_exercise(callback_query: CallbackQuery, state: FSMContext):
 
     current_message = await callback_query.message.edit_text(
         text=text_message,
-        reply_markup=kb.mapping_homework(quantity_exercise, current_exercise)
+        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise)
     )
 
     await state.update_data(
@@ -152,7 +152,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'),
-        reply_markup=kb.mapping_task(state_data['course_id'], task_data['block_id'])
+        reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'])
     )
 
 

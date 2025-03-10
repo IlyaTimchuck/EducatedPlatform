@@ -129,9 +129,9 @@ async def registration_user(username: str, user_id: int, timezone: str, role: st
         date_of_joining = current_datetime()
         lives = 3
         cursor = await con.execute('SELECT course_id FROM unregistered WHERE username = ?', (username,))
+        course_id = (await cursor.fetchone())[0]
+        if course_id is not None:
 
-        if cursor is not None:
-            course_id = (await cursor.fetchone())[0]
             await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)',
                               (username, user_id, course_id, timezone_id, date_of_joining, lives, role))
             await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))

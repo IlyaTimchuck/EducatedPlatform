@@ -12,20 +12,22 @@ import keyboard as kb
 
 router = Router()
 
+
 @router.callback_query(lambda call: call.data in ['back_student', 'back_admin'])
 async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
-    if callback_query.data == 'back_student':
-        lives = (await db.get_data_user(callback_query.from_user.id))['lives']
-        if await state.get_state() is None:
-            await callback_query.message.edit_text(text='Твоё количе', reply_markup=kb.command_menu_student)
-        else:
-            await callback_query.message.delete()
-            await callback_query.message.answer(text='Вот твое командное меню', reply_markup=kb.command_menu_student)
+    text_message, keyboard = await kb.send_command_menu(callback_query.from_user.id)
 
-    elif callback_query.data == 'back_admin':
-        await callback_query.message.edit_text(text='Вот твое командное меню', reply_markup=kb.command_menu_admin)
-    await state.clear()
+    if callback_query.data == 'back_student':
+        if await state.get_state() is not None:
+            # Удаляем сообщение
+            await callback_query.message.delete()
+            # Отправляем новое сообщение с нужным текстом и клавиатурой
+            await callback_query.message.answer(text_message, reply_markup=keyboard)
+            return
+
+    # Если сообщение не удалялось, редактируем его
+    await callback_query.message.edit_text(text=text_message, reply_markup=keyboard)
 
 
 @router.callback_query(F.data == 'add_users')

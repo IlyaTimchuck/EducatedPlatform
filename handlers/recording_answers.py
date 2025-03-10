@@ -1,10 +1,8 @@
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
-from aiogram import Bot
 
 import state as st
-import database as db
 import keyboard as kb
 
 router = Router()
@@ -41,5 +39,5 @@ async def record_answer(message: Message, state: FSMContext):
         chat_id=message.chat.id,
         message_id=message_id,
         text=text_message,
-        reply_markup=kb.mapping_homework(quantity_exercise, current_exercise)
+        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise)
     )

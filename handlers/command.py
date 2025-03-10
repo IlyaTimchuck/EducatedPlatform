@@ -15,8 +15,5 @@ async def start(message: types.Message, state: FSMContext):
 
 @router.message(Command(commands=['command_menu']))
 async def command_menu(message: types.Message):
-    user_data = await db.get_data_user(message.from_user.id)
-    if user_data['role'] == 'student':
-        await message.answer('Это твоё командное меню', reply_markup=kb.command_menu_student)
-    elif user_data['role'] == 'admin':
-        await message.answer('Это твое командное меню', reply_markup=kb.command_menu_admin)
+    text_message, keyboard = await kb.send_command_menu(message.from_user.id)
+    await message.answer(text_message, reply_markup=keyboard)
