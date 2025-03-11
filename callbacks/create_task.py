@@ -2,7 +2,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InputMediaVideo
 from aiogram import Router, F
 from datetime import datetime
-
+from aiogram.exceptions import TelegramBadRequest
 from google_table import get_exersice
 
 import calendar
@@ -17,17 +17,25 @@ router = Router()
 async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     text_message, keyboard = await kb.send_command_menu(callback_query.from_user.id)
+    await state.clear()
 
-    if callback_query.data == 'back_student':
-        if await state.get_state() is not None:
-            # Удаляем сообщение
+    try:
+        await callback_query.message.edit_text(
+            text=text_message,
+            reply_markup=keyboard
+        )
+        return
+    except TelegramBadRequest:
+        # Если редактирование невозможно (например, это медиа-сообщение)
+        try:
             await callback_query.message.delete()
-            # Отправляем новое сообщение с нужным текстом и клавиатурой
-            await callback_query.message.answer(text_message, reply_markup=keyboard)
-            return
+        except TelegramBadRequest:
+            pass  # Если сообщение уже удалено
 
-    # Если сообщение не удалялось, редактируем его
-    await callback_query.message.edit_text(text=text_message, reply_markup=keyboard)
+        await callback_query.message.answer(
+            text=text_message,
+            reply_markup=keyboard
+        )
 
 
 @router.callback_query(F.data == 'add_users')
@@ -53,7 +61,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     current_block = await db.get_blocks(course_id, current=True)
     await state.update_data(course_tittle=course_name)
     await callback_query.message.edit_text(f'Выбери блок\n\nТекущий выбор: {current_block}',
-                                           reply_markup=kb.to_change_block(current_block))
+                                           reply_markup=await kb.to_change_block(current_block))
 
 
 @router.callback_query(
@@ -76,12 +84,12 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         month = datetime.now().month
         await state.update_data(block_id=block_id, block_number=current_block)
         await state.set_state(st.AddTask.choose_options)
-        await callback_query.message.edit_text('Выбери дату дедлайна', reply_markup=kb.generate_calendar(year, month))
+        await callback_query.message.edit_text('Выбери дату дедлайна', reply_markup=await kb.generate_calendar(year, month))
 
     new_text = f'Выбери блок\n\nТекущий выбор: {current_block}'
     if callback_query.message.text != new_text:
         await callback_query.message.edit_text(text=f'Выбери блок\n\nТекущий выбор: {current_block}',
-                                               reply_markup=kb.to_change_block(current_block))
+                                               reply_markup=await kb.to_change_block(current_block))
 
 
 @router.callback_query(lambda c: c.data.startswith('prev_month') or c.data.startswith('next_month'))
@@ -100,7 +108,7 @@ async def month(callback_query: CallbackQuery):
             month = 1
         else:
             month += 1
-    new_markup = kb.generate_calendar(year, month)
+    new_markup = await kb.generate_calendar(year, month)
     await callback_query.message.edit_reply_markup(reply_markup=new_markup)
 
 
@@ -109,7 +117,7 @@ async def select_day(callback_query: CallbackQuery):
     _, year, month, day = callback_query.data.split(":")
     await callback_query.message.edit_text(
         f"Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\nВыбери тип проверки:",
-        reply_markup=kb.choose_parameters_task(f'{day}-{month}-{year}'))
+        reply_markup= await kb.choose_parameters_task(f'{day}-{month}-{year}'))
 
 
 @router.callback_query((lambda c: c.data.startswith('verif')))
@@ -141,7 +149,7 @@ async def process_finish_task(callback_query: CallbackQuery, state: FSMContext):
     if action == 'edit_task':
         year = datetime.now().year
         month = datetime.now().month
-        await callback_query.message.edit_text(f'Выбери дату дедлайна', reply_markup=kb.generate_calendar(year, month))
+        await callback_query.message.edit_text(f'Выбери дату дедлайна', reply_markup=await kb.generate_calendar(year, month))
     elif action == 'confirm_task':
         await callback_query.message.edit_reply_markup(reply_markup=None)
         await callback_query.message.answer('Отправь мне название урока')

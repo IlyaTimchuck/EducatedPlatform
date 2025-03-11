@@ -19,7 +19,7 @@ async def main() -> None:
     await db.add_users(['try_user'], course_id)
     # await db.registration_user('try_user', 123, 'Europe/Moscow', 'admin')
     monitor_task = create_task(setup_monitoring(bot))
-    task_id = await db.add_task('Тестовый 1', course_id, 'Автоматическая проверка',
+    task_id = await db.add_task('Задание 16', course_id, 'Автоматическая проверка',
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
                                 True, '2025-03-10')
