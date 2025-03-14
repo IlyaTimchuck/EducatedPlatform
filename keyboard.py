@@ -50,14 +50,19 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int) -> Inl
     return builder.as_markup()
 
 
-async def mapping_task(course_id, block_id) -> InlineKeyboardMarkup:
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')],
-        [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')],
-        [InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{course_id}:{block_id}'),
-         InlineKeyboardButton(text='В главное меню', callback_data='back_student')]
+async def mapping_task(course_id, block_id, abstract_retrieved: bool = False) -> InlineKeyboardMarkup:
+    keyboard_buttons = [
+        [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]
+    ]
+    if not abstract_retrieved:
+        keyboard_buttons.append(
+            [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')]
+        )
+    keyboard_buttons.append([
+        InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{course_id}:{block_id}'),
+        InlineKeyboardButton(text='В главное меню', callback_data='back_student')
     ])
-    return keyboard
+    return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
 
 async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeyboardMarkup:
@@ -186,7 +191,6 @@ back_button_student = InlineKeyboardMarkup(inline_keyboard=[
 back_button_admin = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Назад', callback_data='back_admin')]
 ])
-
 
 send_homework_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Редактировать введённые данные', callback_data='change_homework')],

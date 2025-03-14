@@ -1,5 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InputMediaVideo
+from aiogram.types import CallbackQuery, InputMediaVideo, InlineKeyboardMarkup
 from aiogram import Router, F
 from datetime import datetime
 
@@ -24,6 +24,10 @@ async def open_tasks_list(callback_query: CallbackQuery, state: FSMContext):
     action, course_id, block_id = callback_query.data.split(':')
     user_id = callback_query.from_user.id
     if action == 'open_block_from_homework':
+        state_data = await state.get_data()
+        abstract = state_data.get('message_abstract_id', False)
+        if abstract:
+            await callback_query.message.bot.delete_message(chat_id=callback_query.message.chat.id, message_id=abstract)
         await state.clear()
         await state.set_state(st.MappingExercise.mapping_task)
         await state.update_data(course_id=course_id)
@@ -49,6 +53,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     session = await db.get_last_session(callback_query.from_user.id, task_id)
     progress_user = await db.get_progress_user(task_id, session['session_id']) if session else\
         await db.get_progress_user(task_id)
+    state_data = await state.get_data()
     if progress_user:
         await state.update_data(results=progress_user)
         right_answers = len(
@@ -63,7 +68,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=await kb.mapping_task(course_id, task_data['block_id'])
+        reply_markup=await kb.mapping_task(course_id, task_data['block_id'], state_data.get('abstract_retrieved', False))
     )
     await state.update_data(task_data=task_data, task_message_id=sent_message.message_id, course_id=course_id)
 
@@ -101,8 +106,16 @@ async def opening_list_exercises(callback_query: CallbackQuery, state: FSMContex
 async def send_abstract(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     task_data = (await state.get_data())['task_data']
-    await callback_query.message.answer_document(document=task_data['abstract_id'])
-
+    sent_message = await callback_query.message.answer_document(document=task_data['abstract_id'])
+    await state.update_data(message_abstract_id=sent_message.message_id, abstract_retrieved=True)
+    current_keyboard = callback_query.message.reply_markup.inline_keyboard
+    new_keyboard = [
+        [button for button in row if button.callback_data != 'get_abstract']
+        for row in current_keyboard
+    ]
+    await callback_query.message.edit_reply_markup(
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=new_keyboard)
+    )
 
 @router.callback_query(lambda c: c.data.startswith('next_exercise') or c.data.startswith('prev_exercise')
                                  or c.data.startswith('open_exercise'))
@@ -152,7 +165,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'),
-        reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'])
+        reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'], state_data.get('abstract_retrieved', False))
     )
 
 

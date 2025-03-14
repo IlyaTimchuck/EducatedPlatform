@@ -17,8 +17,11 @@ router = Router()
 async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     text_message, keyboard = await kb.send_command_menu(callback_query.from_user.id)
+    state_data = await state.get_data()
+    abstract = state_data.get('message_abstract_id', False)
+    if abstract:
+        await callback_query.message.bot.delete_message(chat_id=callback_query.message.chat.id, message_id=abstract)
     await state.clear()
-
     try:
         await callback_query.message.edit_text(
             text=text_message,
@@ -84,7 +87,8 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         month = datetime.now().month
         await state.update_data(block_id=block_id, block_number=current_block)
         await state.set_state(st.AddTask.choose_options)
-        await callback_query.message.edit_text('Выбери дату дедлайна', reply_markup=await kb.generate_calendar(year, month))
+        await callback_query.message.edit_text('Выбери дату дедлайна',
+                                               reply_markup=await kb.generate_calendar(year, month))
 
     new_text = f'Выбери блок\n\nТекущий выбор: {current_block}'
     if callback_query.message.text != new_text:
@@ -117,7 +121,7 @@ async def select_day(callback_query: CallbackQuery):
     _, year, month, day = callback_query.data.split(":")
     await callback_query.message.edit_text(
         f"Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\nВыбери тип проверки:",
-        reply_markup= await kb.choose_parameters_task(f'{day}-{month}-{year}'))
+        reply_markup=await kb.choose_parameters_task(f'{day}-{month}-{year}'))
 
 
 @router.callback_query((lambda c: c.data.startswith('verif')))
@@ -149,7 +153,8 @@ async def process_finish_task(callback_query: CallbackQuery, state: FSMContext):
     if action == 'edit_task':
         year = datetime.now().year
         month = datetime.now().month
-        await callback_query.message.edit_text(f'Выбери дату дедлайна', reply_markup=await kb.generate_calendar(year, month))
+        await callback_query.message.edit_text(f'Выбери дату дедлайна',
+                                               reply_markup=await kb.generate_calendar(year, month))
     elif action == 'confirm_task':
         await callback_query.message.edit_reply_markup(reply_markup=None)
         await callback_query.message.answer('Отправь мне название урока')
