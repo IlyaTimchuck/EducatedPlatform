@@ -2,7 +2,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InputMediaVideo
 from aiogram import Router, F
 from datetime import datetime
-from aiogram.exceptions import TelegramBadRequest
 from google_table import get_exersice
 
 import calendar
@@ -11,34 +10,6 @@ import database as db
 import keyboard as kb
 
 router = Router()
-
-
-@router.callback_query(lambda call: call.data in ['back_student', 'back_admin'])
-async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    text_message, keyboard = await kb.send_command_menu(callback_query.from_user.id)
-    state_data = await state.get_data()
-    abstract = state_data.get('message_abstract_id', False)
-    if abstract:
-        await callback_query.message.bot.delete_message(chat_id=callback_query.message.chat.id, message_id=abstract)
-    await state.clear()
-    try:
-        await callback_query.message.edit_text(
-            text=text_message,
-            reply_markup=keyboard
-        )
-        return
-    except TelegramBadRequest:
-        # Если редактирование невозможно (например, это медиа-сообщение)
-        try:
-            await callback_query.message.delete()
-        except TelegramBadRequest:
-            pass  # Если сообщение уже удалено
-
-        await callback_query.message.answer(
-            text=text_message,
-            reply_markup=keyboard
-        )
 
 
 @router.callback_query(F.data == 'add_users')

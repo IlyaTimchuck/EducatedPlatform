@@ -6,6 +6,7 @@ from geopy.geocoders import Nominatim
 import state as st
 import database as db
 import keyboard as kb
+from handlers.command import command_menu
 
 router = Router()
 
@@ -52,7 +53,10 @@ async def registration_user(message: Message, state: FSMContext):
     result = await db.registration_user(data['name_user'], message.from_user.id, timezone_name, role)
     if result:
         text_message, keyboard = await kb.send_command_menu(message.from_user.id)
-        await message.answer(text_message, reply_markup=keyboard)
+        message_menu_id = await message.answer(text_message, reply_markup=keyboard)
+        if role == 'student':
+            await state.set_state(st.MappingExercise.mapping_command_menu)
+            await state.update_data(message_menu_id=message_menu_id)
     else:
         await message.answer(
             'Ты не был добавлен админом на курс, попробуй проверить введенные данные или обратиться к администратору :(')

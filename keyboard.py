@@ -134,19 +134,19 @@ async def to_change_block(current_block):
 async def choose_course_inline():
     """Используется для добавления задания"""
     builder = InlineKeyboardBuilder()
-    data = await db.get_list_courses()
-    for course in data:
-        builder.add(InlineKeyboardButton(text=course, callback_data=f'choose_course:{course}'))
+    courses = await db.get_list_courses()
+    for course in courses:
+        builder.add(InlineKeyboardButton(text=course, callback_data=f'choose_course:{course['task_title']}'))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
 async def choose_course_reply():
     """Используется для добавления списка пользователей"""
     builder = ReplyKeyboardBuilder()
-    data = await db.get_list_courses()
+    courses = await db.get_list_courses()
     builder.add(KeyboardButton(text='Создать новый'))
-    for course in data:
-        builder.add(KeyboardButton(text=course))
+    for course in courses:
+        builder.add(KeyboardButton(text=course['task_title']))
     builder.adjust(2)
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 

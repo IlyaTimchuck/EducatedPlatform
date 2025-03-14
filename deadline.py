@@ -21,7 +21,6 @@ async def check_deadlines(timezone_id: int):
 
 async def send_deadline_reminder(timezone_id, bot: Bot):
     deadline_today = await db.get_today_deadline(user_id=None, timezone_id=timezone_id)
-    print(deadline_today)
     if deadline_today:
         for deadline_data in deadline_today:
 
@@ -29,11 +28,12 @@ async def send_deadline_reminder(timezone_id, bot: Bot):
             await bot.send_message(deadline_data['user_id'], text_message,
                                    reply_markup=await kb.start_the_task_from_the_reminder(deadline_data['course_id'],
                                                                                           deadline_data['task_id']))
+    print('Напоминания разосланы')
 
-
-async def update_timezone_jobs(scheduler, bot: Bot):
+async def update_jobs(scheduler, bot: Bot):
     """Функция для обновления расписания задач для всех часовых поясов."""
     timezones = await db.get_timezones()
+    courses = await db.get_list_courses()
     print("Updating timezone jobs for:", timezones)
 
     for job in scheduler.get_jobs():
@@ -44,17 +44,19 @@ async def update_timezone_jobs(scheduler, bot: Bot):
         tz_value = timezones[timezone_id]
         scheduler.add_job(
             check_deadlines,
-            trigger=CronTrigger(hour=0, minute=0, timezone=tz_value),
+            trigger=CronTrigger(hour=11, minute=24, timezone=tz_value),
             args=[timezone_id],
             id=f"task_{timezone_id}"
         )
 
         scheduler.add_job(
             send_deadline_reminder,
-            trigger=CronTrigger(hour=17, minute=52, timezone=tz_value),
+            trigger=CronTrigger(hour=11, minute=23, timezone=tz_value),
             args=[timezone_id, bot],
             id=f"reminder_{timezone_id}"
         )
+
+
     print("Timezone jobs updated.")
 
 
@@ -62,11 +64,11 @@ async def setup_monitoring(bot: Bot):
     """Основная функция, которая инициализирует планировщик и устанавливает глобальное обновление"""
     scheduler = AsyncIOScheduler()
     scheduler.start()
-    await update_timezone_jobs(scheduler, bot)
+    await update_jobs(scheduler, bot)
 
     scheduler.add_job(
-        update_timezone_jobs,
-        trigger=CronTrigger(hour=17, minute=51, timezone="Europe/Moscow"),
+        update_jobs,
+        trigger=CronTrigger(hour=11, minute=22, timezone="Europe/Moscow"),
         args=[scheduler, bot],
         id="global_update"
     )
