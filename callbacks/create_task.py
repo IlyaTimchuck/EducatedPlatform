@@ -32,10 +32,14 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     await state.set_state(st.AddTask.choose_course)
     course_name = callback_query.data.split(":")[-1]
     course_id = await db.get_course_id(course_name)
-    current_block = await db.get_blocks(course_id, current=True)
     await state.update_data(course_tittle=course_name)
-    await callback_query.message.edit_text(f'Выбери блок\n\nТекущий выбор: {current_block}',
-                                           reply_markup=await kb.to_change_block(current_block))
+    current_block = (await state.get_data()).get('current_block')
+    if current_block is None:
+        current_block = await db.get_blocks(course_id, current=True)
+        await state.update_data(current_block=current_block)
+    await callback_query.message.edit_text(
+        f'Выбери блок\nТекущий блок на курсе: {current_block}\n\nТекущий выбор: {current_block} блок',
+        reply_markup=await kb.to_change_block(current_block))
 
 
 @router.callback_query(
@@ -43,28 +47,30 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         "confirm_block"))
 async def process_increase_block(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
+    current_block = (await state.get_data()).get('current_block')
+
     action, current_value = callback_query.data.split(":")
-    current_block = int(current_value)
+    choose_block = int(current_value)
 
     if action == "increase_block":
-        current_block += 1
-    elif action == "reduce_block" and current_block != 1:
-        current_block -= 1
+        choose_block += 1
+    elif action == "reduce_block" and choose_block != 1:
+        choose_block -= 1
     elif action == 'confirm_block':
         state_data = await state.get_data()
         course_id = await db.get_course_id(state_data['course_tittle'])
-        block_id = await db.add_block(course_id, current_block)
+        block_id = await db.add_block(course_id, choose_block)
         year = datetime.now().year
         month = datetime.now().month
-        await state.update_data(block_id=block_id, block_number=current_block)
+        await state.update_data(block_id=block_id, block_number=choose_block)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',
                                                reply_markup=await kb.generate_calendar(year, month))
 
-    new_text = f'Выбери блок\n\nТекущий выбор: {current_block}'
+    new_text = f'Выбери блок\nТекущий блок на курсе: {choose_block}\n\nТекущий выбор: {choose_block} блок'
     if callback_query.message.text != new_text:
-        await callback_query.message.edit_text(text=f'Выбери блок\n\nТекущий выбор: {current_block}',
-                                               reply_markup=await kb.to_change_block(current_block))
+        await callback_query.message.edit_text(text=f'Выбери блок\nТекущий блок на курсе: {current_block}\n\nТекущий выбор: {choose_block} блок',
+                                               reply_markup=await kb.to_change_block(choose_block))
 
 
 @router.callback_query(lambda c: c.data.startswith('prev_month') or c.data.startswith('next_month'))

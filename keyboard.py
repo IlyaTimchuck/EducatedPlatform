@@ -136,7 +136,8 @@ async def choose_course_inline():
     builder = InlineKeyboardBuilder()
     courses = await db.get_list_courses()
     for course in courses:
-        builder.add(InlineKeyboardButton(text=course, callback_data=f'choose_course:{course['task_title']}'))
+        builder.add(InlineKeyboardButton(text=course['course_title'], callback_data=f"choose_course:{course['course_title']}"))
+
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
@@ -172,7 +173,8 @@ async def send_command_menu(user_id: int):
             [InlineKeyboardButton(text='Добавить урок', callback_data='add_lesson')],
             [InlineKeyboardButton(text='Добвить пользователей', callback_data='add_users')]
         ])
-        return command_menu
+        text_message = 'Распознал тебя как админа'
+        return text_message, command_menu
 
 
 async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> InlineKeyboardMarkup:

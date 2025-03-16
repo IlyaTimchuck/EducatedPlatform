@@ -33,7 +33,7 @@ async def send_deadline_reminder(timezone_id, bot: Bot):
 async def update_jobs(scheduler, bot: Bot):
     """Функция для обновления расписания задач для всех часовых поясов."""
     timezones = await db.get_timezones()
-    courses = await db.get_list_courses()
+
     print("Updating timezone jobs for:", timezones)
 
     for job in scheduler.get_jobs():
