@@ -32,13 +32,10 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     await state.set_state(st.AddTask.choose_course)
     course_name = callback_query.data.split(":")[-1]
     course_id = await db.get_course_id(course_name)
-    await state.update_data(course_tittle=course_name)
-    current_block = (await state.get_data()).get('current_block')
-    if current_block is None:
-        current_block = await db.get_blocks(course_id, current=True)
-        await state.update_data(current_block=current_block)
+    current_block = await db.get_blocks(course_id, current=True)
+    await state.update_data(course_title=course_name, current_block=current_block)
     await callback_query.message.edit_text(
-        f'Выбери блок\nТекущий блок на курсе: {current_block}\n\nТекущий выбор: {current_block} блок',
+        f'Выбери блок\n\nТекущий выбор: {current_block} блок',
         reply_markup=await kb.to_change_block(current_block))
 
 
@@ -47,30 +44,41 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         "confirm_block"))
 async def process_increase_block(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
-    current_block = (await state.get_data()).get('current_block')
 
     action, current_value = callback_query.data.split(":")
-    choose_block = int(current_value)
+    selected_block = int(current_value)
 
     if action == "increase_block":
-        choose_block += 1
-    elif action == "reduce_block" and choose_block != 1:
-        choose_block -= 1
+        selected_block += 1
+    elif action == "reduce_block" and selected_block != 1:
+        selected_block -= 1
     elif action == 'confirm_block':
         state_data = await state.get_data()
-        course_id = await db.get_course_id(state_data['course_tittle'])
-        block_id = await db.add_block(course_id, choose_block)
+        course_id = await db.get_course_id(state_data['course_title'])
+        block_id = await db.add_block(course_id, selected_block)
         year = datetime.now().year
         month = datetime.now().month
-        await state.update_data(block_id=block_id, block_number=choose_block)
+        await state.update_data(block_id=block_id, block_number=selected_block)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',
                                                reply_markup=await kb.generate_calendar(year, month))
+        await callback_query.message.edit_text(
+            f'Твой выбор: {selected_block}\nТекущий блок на курсе: {state_data['current_block']}\n\nНачать новый блок и обновить всем пользователям жизни?')
 
-    new_text = f'Выбери блок\nТекущий блок на курсе: {choose_block}\n\nТекущий выбор: {choose_block} блок'
+    new_text = f'Выбери блок\n\nТекущий выбор: {selected_block} блок'
     if callback_query.message.text != new_text:
-        await callback_query.message.edit_text(text=f'Выбери блок\nТекущий блок на курсе: {current_block}\n\nТекущий выбор: {choose_block} блок',
-                                               reply_markup=await kb.to_change_block(choose_block))
+        await callback_query.message.edit_text(text=f'Выбери блок\n\nТекущий выбор: {selected_block} блок',
+                                               reply_markup=await kb.to_change_block(selected_block))
+
+
+@router.callback_query(lambda c: c.data == 'cancel_update_block' or c.data == 'confirm_new_block')
+async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
+    action = callback_query.data
+    state_data = await state.get_data()
+    if action == 'cancel_update_block':
+        await callback_query.message.edit_text(
+            f'Выбери блок\n\nТекущий выбор: {state_data['current_block']} блок',
+            reply_markup=await kb.to_change_block(state_data['current_block']))
 
 
 @router.callback_query(lambda c: c.data.startswith('prev_month') or c.data.startswith('next_month'))
@@ -144,17 +152,21 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     await callback_query.answer()
     state_data = await state.get_data()
     verif = state_data['verification']
-    task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['verification'],
-                                state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],
-                                state_data['deadline'])
-    await state.update_data(task_id=task_id)
+    task_data = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['verification'],
+                                  state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],
+                                  state_data['deadline'])
+    await state.update_data(task_id=task_data['task_id'])
     exercises = get_exersice()
     if verif == 'Ручная проверка':
         for exercise in exercises:
             exercise_condition = exercise[0]
-            await db.add_exercise(task_id, exercise_condition)
+            await db.add_exercise(task_data['task_id'], exercise_condition)
     elif verif == 'Автоматическая проверка':
         for exercise in exercises:
             exercise_condition = exercise[0]
             exercise_answer = exercise[1]
-            await db.add_exercise(task_id, exercise_condition, exercise_answer)
+            await db.add_exercise(task_data['task_id'], exercise_condition, exercise_answer)
+
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    if task_data['block_start'] == current_date:
+        pass

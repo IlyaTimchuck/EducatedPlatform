@@ -1,8 +1,8 @@
-from typing import Any, Coroutine
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 import aiosqlite
 from collections import defaultdict
+
 
 
 def current_datetime():
@@ -137,7 +137,7 @@ async def registration_user(username: str, user_id: int, timezone: str, role: st
 
         timezone_id = tz_record[0]
         date_of_joining = current_datetime()
-        lives = 3
+        lives = 2
         cursor = await con.execute('SELECT course_id FROM unregistered WHERE username = ?', (username,))
         course_id = await cursor.fetchone()
         if course_id:
@@ -191,35 +191,83 @@ async def get_course_id(course_title: str) -> int:
 
 
 # add_lesson
-async def add_block(course_id: int, block_number: int) -> int:
-    """Если блока не существует, то добавляет его. Всегда возвращает id блока"""
+
+async def check_block_exists(course_id: int, block_number: int) -> bool:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        async with con.execute(
+            'SELECT 1 FROM blocks WHERE course_id = ? AND block_number = ?',
+            (course_id, block_number)
+        ) as cursor:
+            return bool(await cursor.fetchone())
+
+
+async def create_block(course_id: int, block_number: int) -> int:
+    """Создает новый блок и возвращает его ID"""
     block_start = datetime.now().strftime("%Y-%m-%d")
     async with aiosqlite.connect('educated_platform.db') as con:
-        # Проверяем, существует ли блок
-        if block_number not in await get_blocks(course_id):
-            # Добавляем блок, если его нет
-            await con.execute(
-                'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
-                (course_id, block_start, block_number)
-            )
-            await con.commit()
+        cursor = await con.execute(
+            'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
+            (course_id, block_start, block_number)
+        )
+        await con.commit()
+        return cursor.lastrowid
 
+
+async def get_block_id(course_id: int, block_number: int) -> int:
+    async with aiosqlite.connect('educated_platform.db') as con:
         async with con.execute(
-                'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
-                (course_id, block_number)) as cursor:
+            'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
+            (course_id, block_number)
+        ) as cursor:
             row = await cursor.fetchone()
-            return row[0]
+            return row[0] if row else None
+
+
+# async def add_block(course_id: int, block_number: int) -> int:
+#     """Если блока не существует, то добавляет его. Всегда возвращает id блока"""
+#     block_start = datetime.now().strftime("%Y-%m-%d")
+#     async with aiosqlite.connect('educated_platform.db') as con:
+#         # Проверяем, существует ли блок
+#         if block_number not in await get_blocks(course_id):
+#             # Добавляем блок, если его нет
+#             await con.execute(
+#                 'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
+#                 (course_id, block_start, block_number)
+#             )
+#             await con.commit()
+#
+#         async with con.execute(
+#                 'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
+#                 (course_id, block_number)) as cursor:
+#             row = await cursor.fetchone()
+#             return row[0]
 
 
 async def add_task(task_title: str, block_id: int, verification: str, video_id: str, abstract_id: str,
-                   availability_files: bool, deadline: str) -> int:
+                   availability_files: bool, deadline: str) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
-        await con.execute(
-            'INSERT INTO tasks (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline) VALUES(?, ?, ?, ?, ?, ?, ?)',
-            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline))
+        # Вставляем новую задачу
+        cursor = await con.execute(
+            '''INSERT INTO tasks 
+            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline)
+            VALUES(?, ?, ?, ?, ?, ?, ?)''',
+            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline)
+        )
+        task_id = cursor.lastrowid  # Получаем ID созданной задачи
         await con.commit()
-        task_id = await con.execute('SELECT task_id FROM tasks WHERE task_title = ?', (task_title,))
-        return (await task_id.fetchone())[0]
+        query = '''
+            SELECT 
+                t.task_id, 
+                t.task_title, 
+                b.block_start, 
+                b.course_id
+            FROM tasks t
+            JOIN blocks b ON t.block_id = b.block_id
+            WHERE t.task_id = ?'''
+        con.row_factory = aiosqlite.Row
+        async with con.execute(query, (task_id,)) as cursor:
+            result = await cursor.fetchone()
+            return dict(result) if result else {}
 
 
 async def add_exercise(task_id: int, exercise_condition: str, exercise_answer=None) -> None:
@@ -304,17 +352,16 @@ async def get_progress_user(task_id: int, session_id: int = None) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
 
-        query = """
-        SELECT
-            e.exercise_id,
-            lp.input_answer,
-            lp.right_answer
-        FROM
-            learning_progress AS lp
-        JOIN
-            exercises AS e ON lp.exercise_id = e.exercise_id
-        WHERE
-            e.task_id = ?
+        query = """SELECT
+                    e.exercise_id,
+                    lp.input_answer,
+                    lp.right_answer
+                FROM
+                    learning_progress lp
+                JOIN
+                    exercises e ON lp.exercise_id = e.exercise_id
+                WHERE
+                    e.task_id = ?
         """
 
         params = (task_id,)
@@ -424,7 +471,6 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
             return [dict(row) for row in rows] if rows else []
 
 
-
 async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         # Получаем значение timezone из unique_timezones
@@ -519,15 +565,15 @@ async def get_today_new_block() -> list:
         return [row[0] for row in rows] if rows else []
 
 
-async def update_info_with_new_block(course_id, block_id):
-    current_date = datetime.now().strftime("%Y-%m-%d")
+async def update_info_with_new_block(course_id: int):
     async with aiosqlite.connect('educated_platform.db') as con:
-        cursor = await con.execute('SELECT course_id FROM blocks WHERE block_start=?', current_date)
-        rows = await cursor.fetchall()
-        new_block_today = [row[0] for row in rows] if rows else []
-        if new_block_today:
-            await con.execute("BEGIN TRANSACTION")
-
-
+        await con.execute('BEGIN TRANSACTION')
+        try:
+            con.execute('UPDATE users SET lives=? WHERE course_id = ? AND lives != ?', (3, course_id, 0))
+        except Exception as e:
+            # При ошибке откатываем изменения.
+            await con.rollback()
+            print("Ошибка при выполнении транзакции:", e)
+            raise e
 
 # async def get_list_lives(user)
