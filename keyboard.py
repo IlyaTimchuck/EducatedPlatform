@@ -226,3 +226,9 @@ confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Отменить', callback_data='cancel_update_block'),
      InlineKeyboardButton(text='Подтвердить', callback_data='confirm_new_block')]
 ])
+
+
+confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Отменить', callback_data='cancel_update_block'),
+     InlineKeyboardButton(text='Подтвердить', callback_data='confirm_new_block')]
+])
