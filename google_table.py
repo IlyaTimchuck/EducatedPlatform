@@ -4,7 +4,7 @@ import gspread
 
 def get_exersice():
     try:
-        SERVICE_ACCOUNT_FILE = "educatedplatform-3074c57a82e0.json"
+        SERVICE_ACCOUNT_FILE = "educatedplatform-8219d1d704e8.json"
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
         creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
@@ -15,5 +15,6 @@ def get_exersice():
 
         data = worksheet.get_all_values()
         return data[1:]
-    except:
+    except Exception as e:
+        print(e)
         return 'Ошибка на стороне Google, попробуй еще раз'

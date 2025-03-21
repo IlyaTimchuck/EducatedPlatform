@@ -2,13 +2,13 @@ from asyncio import run, create_task, CancelledError
 from aiogram import Bot, Dispatcher
 from handlers.__init__ import setup_routers
 from callbacks.__init__ import setup_routers_callbacks
+from bot_instance import bot
 from deadline import setup_monitoring
 import database as db
 
 
 
 async def main() -> None:
-    bot = Bot('7667517965:AAGehj0I0nCwYFLBYTlpG2a4D5YQElh7qK0')
     dp = Dispatcher()
     setup_routers(dp)
     setup_routers_callbacks(dp)
@@ -17,12 +17,11 @@ async def main() -> None:
     course_id = await db.get_course_id('Тестовый')
     await db.add_users(['f'], course_id)
     await db.add_users(['try_user'], course_id)
-    await db.create_block(course_id, 2)
     monitor_task = create_task(setup_monitoring(bot))
     task_id = await db.add_task('Задание 16', course_id, 'Автоматическая проверка',
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
-                                True, '2025-03-14')
+                                True, '2025-03-21')
     await db.add_exercise(task_id,
                           'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',
                           '12')

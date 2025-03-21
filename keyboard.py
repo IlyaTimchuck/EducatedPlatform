@@ -1,8 +1,6 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 import database as db
-import state as st
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 import calendar
 
@@ -147,7 +145,7 @@ async def choose_course_reply():
     courses = await db.get_list_courses()
     builder.add(KeyboardButton(text='Создать новый'))
     for course in courses:
-        builder.add(KeyboardButton(text=course['task_title']))
+        builder.add(KeyboardButton(text=course['course_title']))
     builder.adjust(2)
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
@@ -181,8 +179,6 @@ async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> Inli
     button = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Приступить к выполнению задания', callback_data=f'open_task:{course_id}:{task_id}')]
     ])
-    # await state.set_state(st.MappingExercise.mapping_task)
-    # await state.update_data(course_id=course_id, block_id=block_id)
     return button
 
 
@@ -220,12 +216,6 @@ location_button = ReplyKeyboardMarkup(
     resize_keyboard=True,
     one_time_keyboard=True
 )
-
-
-confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Отменить', callback_data='cancel_update_block'),
-     InlineKeyboardButton(text='Подтвердить', callback_data='confirm_new_block')]
-])
 
 
 confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[

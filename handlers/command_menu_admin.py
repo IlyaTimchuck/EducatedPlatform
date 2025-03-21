@@ -36,7 +36,7 @@ async def process_get_list_users(message: Message, state: FSMContext):
     data = await state.get_data()
     course_id = await db.get_course_id(data['course_tittle'])
     await db.add_users(list_users, course_id)
-    _, keyboard = kb.send_command_menu(message.from_user.id)
+    _, keyboard = await kb.send_command_menu(message.from_user.id)
     await message.answer('Пользователи были успешно добавлены', reply_markup=keyboard)
 
 
@@ -60,16 +60,3 @@ async def process_get_abstract(message: Message, state: FSMContext):
     await message.answer('Добавь условия и ответы в гугл таблицу', reply_markup=kb.send_exercise )
     await state.set_state(st.AddTask.verification)
 
-
-# @router.message(st.AddTask.get_homework)
-# async def process_get_homework(message: Message, state: FSMContext):
-#     state_data = await state.get_data()
-#     task_id = await db.get_task_id()
-#     if state_data['manual_verification']:
-#         condition = message.text
-#         await db.add_exercise(state_data[])
-#
-#     data = message.text.split('ОТВЕТ')
-#     condition = data[0]
-#     answer = data[-1].lstrip()
-#     await db.add_exercise(state_data['task_id'], state_data['exercise_number'], condition, answer)

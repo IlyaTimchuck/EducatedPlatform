@@ -44,14 +44,14 @@ async def update_jobs(scheduler, bot: Bot):
         tz_value = timezones[timezone_id]
         scheduler.add_job(
             check_deadlines,
-            trigger=CronTrigger(hour=11, minute=24, timezone=tz_value),
+            trigger=CronTrigger(hour=0, minute=52, timezone=tz_value),
             args=[timezone_id],
             id=f"task_{timezone_id}"
         )
 
         scheduler.add_job(
             send_deadline_reminder,
-            trigger=CronTrigger(hour=11, minute=23, timezone=tz_value),
+            trigger=CronTrigger(hour=11, minute=50, timezone=tz_value),
             args=[timezone_id, bot],
             id=f"reminder_{timezone_id}"
         )
@@ -68,7 +68,7 @@ async def setup_monitoring(bot: Bot):
 
     scheduler.add_job(
         update_jobs,
-        trigger=CronTrigger(hour=11, minute=22, timezone="Europe/Moscow"),
+        trigger=CronTrigger(hour=0, minute=50, timezone="Europe/Moscow"),
         args=[scheduler, bot],
         id="global_update"
     )

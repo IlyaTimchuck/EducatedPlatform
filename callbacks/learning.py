@@ -9,8 +9,9 @@ import keyboard as kb
 
 router = Router()
 
+
 @router.callback_query(F.data == 'block_list')
-async def open_blocks_list(callback_query: CallbackQuery, state: FSMContext):
+async def open_blocks_list(callback_query: CallbackQuery):
     await callback_query.answer()
     user_id = callback_query.from_user.id
     user_data = await db.get_data_user(user_id)
@@ -49,9 +50,11 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     action, course_id, task_id = callback_query.data.split(':')
     task_id = int(task_id)
     task_data = await db.get_data_task(task_id)
-    text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}'
+    date_obj = datetime.strptime(task_data['deadline'], '%Y-%m-%d')
+    deadline = date_obj.strftime('%d-%m-%Y')
+    text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {deadline}'
     session = await db.get_last_session(callback_query.from_user.id, task_id)
-    progress_user = await db.get_progress_user(task_id, session['session_id']) if session else\
+    progress_user = await db.get_progress_user(task_id, session['session_id']) if session else \
         await db.get_progress_user(task_id)
     state_data = await state.get_data()
     if progress_user:
@@ -68,9 +71,11 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=await kb.mapping_task(course_id, task_data['block_id'], state_data.get('abstract_retrieved', False))
+        reply_markup=await kb.mapping_task(course_id, task_data['block_id'],
+                                           state_data.get('abstract_retrieved', False))
     )
     await state.update_data(task_data=task_data, task_message_id=sent_message.message_id, course_id=course_id)
+
 
 @router.callback_query(F.data == 'open_homework')
 async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
@@ -79,6 +84,7 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     homework = await db.get_list_exercises(state_data['task_data']['task_id'])
     await state.set_state(st.MappingExercise.solving_homework)
+
     quantity_exercise = len(homework)
     current_exercise = 1
     if 'results' in state_data:
@@ -86,8 +92,8 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     else:
         text_message = homework[current_exercise][0]
     sent_message = await callback_query.message.answer(text=text_message,
-                                                       reply_markup= await kb.mapping_homework(quantity_exercise,
-                                                                                        current_exercise))
+                                                       reply_markup=await kb.mapping_homework(quantity_exercise,
+                                                                                              current_exercise))
     await state.update_data(quantity_exercise=quantity_exercise, homework=homework, current_exercise=current_exercise,
                             current_message_id=sent_message.message_id,
                             session_start=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -116,6 +122,7 @@ async def send_abstract(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.edit_reply_markup(
         reply_markup=InlineKeyboardMarkup(inline_keyboard=new_keyboard)
     )
+
 
 @router.callback_query(lambda c: c.data.startswith('next_exercise') or c.data.startswith('prev_exercise')
                                  or c.data.startswith('open_exercise'))
@@ -151,7 +158,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
     session_end = datetime.now().strftime("%Y-%m-%d")
-    quotient = int((state_data['quantity_right_answers'] / state_data['quantity_exercise']) * 100)
+    quotient = int((state_data.get('quantity_right_answers', 0) / state_data['quantity_exercise']) * 100)
     is_completed = quotient >= 90
     await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
                                state_data.get('results', {}), state_data['session_start'], session_end, is_completed)
@@ -165,7 +172,8 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'),
-        reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'], state_data.get('abstract_retrieved', False))
+        reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'],
+                                           state_data.get('abstract_retrieved', False))
     )
 
 

@@ -48,7 +48,7 @@ async def registration_user(message: Message, state: FSMContext):
     if timezone_name is None:
         await message.answer("Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
         return
-    role = 'student' if message.from_user.id != 795508218 else 'admin'
+    role = 'student' #if message.from_user.id != 795508218 else 'admin'
     # Регистрируем пользователя в базе данных
     result = await db.registration_user(data['name_user'], message.from_user.id, timezone_name, role)
     if result:

@@ -1,7 +1,8 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InputMediaVideo
+from aiogram.types import CallbackQuery
 from aiogram import Router, F
 from datetime import datetime
+from bot_instance import bot
 from google_table import get_exersice
 
 import calendar
@@ -62,9 +63,11 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
             await state.set_state(st.AddTask.choose_options)
             await callback_query.message.edit_text('Выбери дату дедлайна',
                                                    reply_markup=await kb.generate_calendar(year, month))
+            await state.update_data(block_id=block_id)
         else:
             await callback_query.message.edit_text(
-            f'Твой выбор: {selected_block}\nТекущий блок на курсе: {state_data['current_block']}\n\nНачать новый блок и обновить всем пользователям жизни?', reply_markup=kb.confirm_new_block_keyboard)
+                f'Твой выбор: {selected_block}\nТекущий блок на курсе: {state_data['current_block']}\n\nНачать новый блок и обновить всем пользователям жизни?',
+                reply_markup=kb.confirm_new_block_keyboard)
     new_text = f'Выбери блок\n\nТекущий выбор: {selected_block} блок'
     if callback_query.message.text != new_text:
         await callback_query.message.edit_text(text=f'Выбери блок\n\nТекущий выбор: {selected_block} блок',
@@ -82,7 +85,9 @@ async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
     elif action == 'confirm_new_block':
         year = datetime.now().year
         month = datetime.now().month
-        await db.create_block(state_data['course_id'], state_data['selected_block'])
+        block_id = await db.create_block(state_data['course_id'], state_data['selected_block'])
+        await db.update_lives(state_data['course_id'])
+        await state.update_data(block_id=block_id)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',
                                                reply_markup=await kb.generate_calendar(year, month))
@@ -113,7 +118,7 @@ async def select_day(callback_query: CallbackQuery):
     _, year, month, day = callback_query.data.split(":")
     await callback_query.message.edit_text(
         f"Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\nВыбери тип проверки:",
-        reply_markup=await kb.choose_parameters_task(f'{day}-{month}-{year}'))
+        reply_markup=await kb.choose_parameters_task(f'{year}-{month}-{day}'))
 
 
 @router.callback_query((lambda c: c.data.startswith('verif')))
@@ -160,9 +165,8 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     state_data = await state.get_data()
     verif = state_data['verification']
     task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['verification'],
-                                  state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],
-                                  state_data['deadline'])
-    await state.update_data(task_id=task_id)
+                                state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],
+                                state_data['deadline'])
     exercises = get_exersice()
     if verif == 'Ручная проверка':
         for exercise in exercises:
@@ -174,6 +178,9 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
             exercise_answer = exercise[1]
             await db.add_exercise(task_id, exercise_condition, exercise_answer)
 
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    if task_id == current_date:
-        pass
+    users_by_course = await db.get_users_by_course(state_data['course_id'])
+    for user_id in users_by_course:
+        await bot.send_message(chat_id=user_id,
+                               text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему жми на кнопку!',
+                               reply_markup=await kb.start_the_task_from_the_reminder(state_data['course_id'],
+                                                                                task_id))

@@ -43,7 +43,6 @@ async def create_db() -> None:
         await con.execute('''CREATE TABLE IF NOT EXISTS blocks (
             course_id INTEGER,
             block_number INTEGER, 
-            block_start TEXT,
             block_id INTEGER PRIMARY KEY AUTOINCREMENT)''')
 
         await con.execute('''CREATE TABLE IF NOT EXISTS tasks (
@@ -90,20 +89,20 @@ async def create_db() -> None:
         await con.execute('''CREATE TABLE IF NOT EXISTS history_of_lives (
             user_id INTEGER,
             task_id INTEGER,
-            current_lives INTEGER)''')
+            lives_after_action INTEGER,
+            action TEXT)''')  # action: +1, +3, -1...
 
         await con.commit()
 
 
 # Registration
 async def create_course(course_title) -> None:
-    block_start = datetime.now().strftime("%Y-%m-%d")
     async with aiosqlite.connect('educated_platform.db') as con:
         await con.execute('INSERT INTO courses (course_title) VALUES(?)', (course_title,))
         await con.commit()
         course_id = await get_course_id(course_title)
-        await con.execute('INSERT INTO blocks (course_id, block_start, block_number) VALUES(?, ?, ?)',
-                          (course_id, block_start, 1))
+        await con.execute('INSERT INTO blocks (course_id, block_number) VALUES(?, ?)',
+                          (course_id, 1))
         await con.commit()
 
 
@@ -143,12 +142,20 @@ async def registration_user(username: str, user_id: int, timezone: str, role: st
         if course_id:
             await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)',
                               (username, user_id, course_id[0], timezone_id, date_of_joining, lives, role))
+            await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
             await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))
             await con.commit()
         return course_id
 
 
 # Other function
+async def get_users_by_course(course_id: int) -> list:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        cursor = await con.execute('SELECT user_id FROM users WHERE course_id=? AND role = ?', (course_id, 'student'))
+        result = await cursor.fetchall()
+        return [x[0] for x in result] if result else []
+
+
 async def get_data_user(user_id: int) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
@@ -190,56 +197,28 @@ async def get_course_id(course_title: str) -> int:
         return course_id[0]
 
 
-# add_lesson
-# async def add_block(course_id: int, block_number: int) -> int:
-#     """Если блока не существует, то добавляет его. Всегда возвращает id блока"""
-#     block_start = datetime.now().strftime("%Y-%m-%d")
-#     async with aiosqlite.connect('educated_platform.db') as con:
-#         # Проверяем, существует ли блок
-#         if block_number not in await get_blocks(course_id):
-#             # Добавляем блок, если его нет
-#             await con.execute(
-#                 'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
-#                 (course_id, block_start, block_number)
-#             )
-#             await con.commit()
-#
-#         async with con.execute(
-#                 'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
-#                 (course_id, block_number)) as cursor:
-#             row = await cursor.fetchone()
-#             return row[0]
-
-async def check_block_exists(course_id: int, block_number: int) -> bool:
+async def check_block_exists(course_id: int, block_number: int) -> int:
     async with aiosqlite.connect('educated_platform.db') as con:
         async with con.execute(
-            '''SELECT b.block_id
-                FROM blocks b
-                WHERE b.course_id = ? AND b.block_number = ?
-            ''',
-            (course_id, block_number)
+                '''SELECT b.block_id
+                    FROM blocks b
+                    WHERE b.course_id = ? AND b.block_number = ?
+                ''',
+                (course_id, block_number)
         ) as cursor:
-            return await cursor.fetchall()
+            result = await cursor.fetchall()
+            return int(result[0][0]) if result else None
+
 
 async def create_block(course_id: int, block_number: int) -> int:
     """Создает новый блок и возвращает его ID"""
-    block_start = datetime.now().strftime("%Y-%m-%d")
     async with aiosqlite.connect('educated_platform.db') as con:
         cursor = await con.execute(
-            'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
-            (course_id, block_start, block_number)
+            'INSERT INTO blocks (course_id, block_number) VALUES (?, ?)',
+            (course_id, block_number)
         )
         await con.commit()
         return cursor.lastrowid
-
-# async def get_block_id(course_id: int, block_number: int) -> int:
-#     async with aiosqlite.connect('educated_platform.db') as con:
-#         async with con.execute(
-#             'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
-#             (course_id, block_number)
-#         ) as cursor:
-#             row = await cursor.fetchone()
-#             return row[0] if row else None
 
 
 async def add_task(task_title: str, block_id: int, verification: str, video_id: str, abstract_id: str,
@@ -299,26 +278,62 @@ async def get_list_tasks(block_id: int) -> dict:
                 return {}
 
 
-async def mapping_task_status(user_id, task_id):
+from datetime import datetime
+
+
+async def mapping_task_status(user_id: int, task_id: int) -> str:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
         query = '''
             SELECT 
-                COUNT(e.exercise_id) as total_exercises,
-                SUM(lp.right_answer) as completed_exercises
-            FROM exercises e
+                COUNT(e.exercise_id) AS total_exercises,
+                SUM(lp.right_answer) AS completed_exercises,
+                COALESCE(cd.deadline, t.deadline) AS deadline
+            FROM tasks t
+            JOIN exercises e 
+                ON t.task_id = e.task_id
+            LEFT JOIN changed_deadlines cd 
+                ON cd.task_id = t.task_id
+               AND cd.user_id = ?
             LEFT JOIN learning_progress lp
-                ON e.exercise_id = lp.exercise_id
-                AND lp.user_id = ?
-            WHERE e.task_id = ?
+                ON lp.exercise_id = e.exercise_id
+               AND lp.user_id = ?
+            WHERE t.task_id = ?
         '''
-        async with con.execute(query, (user_id, task_id)) as cursor:
-            result = await cursor.fetchone()
+        async with con.execute(query, (user_id, user_id, task_id)) as cursor:
+            row = await cursor.fetchone()
 
-            if not result or result['total_exercises'] == 0:
+            if not row or row['total_exercises'] == 0:
                 return '❌'
 
-            return '✅' if result['completed_exercises'] == result['total_exercises'] else '⏳'
+            total_exercises = row['total_exercises']
+            completed_exercises = row['completed_exercises'] or 0
+            deadline_str = row['deadline']
+
+            # Парсим дедлайн с учетом того, что он может содержать только дату
+            deadline = None
+            if deadline_str:
+                try:
+                    # Если строка содержит только дату (YYYY-MM-DD)
+                    if len(deadline_str) == 10:
+                        deadline = datetime.strptime(deadline_str, '%Y-%m-%d')
+                    else:
+                        deadline = datetime.strptime(deadline_str, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    # Если формат не соответствует ни одному из ожидаемых вариантов,
+                    # можно залогировать ошибку или задать deadline = None
+                    deadline = None
+
+            # Если дедлайн задан и прошёл, и не все упражнения выполнены до дедлайна – возвращаем ❌
+            if deadline and datetime.now() > deadline and completed_exercises < total_exercises:
+                return '❌'
+
+            # Если все упражнения выполнены – возвращаем ✅
+            if completed_exercises == total_exercises:
+                return '✅'
+
+            # Иначе возвращаем статус "в процессе" – ⏳
+            return '⏳'
 
 
 async def get_data_task(task_id: int):
@@ -408,20 +423,6 @@ async def get_timezones() -> dict:
             return {row["timezone_id"]: row["timezone"] for row in rows} if rows else {}
 
 
-# async def get_users_by_timezone(timezone_id: int) -> dict:
-#     async with aiosqlite.connect('educated_platform.db') as con:
-#         con.row_factory = aiosqlite.Row
-#         query = 'SELECT course_id, user_id FROM users WHERE timezone_id = ?'
-#         async with con.execute(query, (timezone_id,)) as cursor:
-#             rows = await cursor.fetchall()
-#             result = defaultdict(list)
-#             for row in rows:
-#                 result[row["course_id"]].append(row["user_id"])
-#             return dict(result)
-#
-#
-
-
 async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> list:
     """
     Возвращает список строк, где каждая строка содержит:
@@ -453,7 +454,6 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
         async with con.execute(query, (timezone_id, current_date)) as cursor:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows] if rows else []
-
 
 
 async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> None:
@@ -501,11 +501,11 @@ async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> No
             for u in updates:
                 # Если один пользователь появляется несколько раз, мы будем добавлять несколько записей.
                 new_lives = u["lives"] - user_counts[u["user_id"]]
-                history_records.append((u["user_id"], u["task_id"], new_lives))
+                history_records.append((u["user_id"], u["task_id"], new_lives, '-1'))
 
             # Выполняем пакетную вставку в history_of_lives
             await con.executemany(
-                "INSERT INTO history_of_lives (user_id, task_id, current_lives) VALUES (?, ?, ?)",
+                "INSERT INTO history_of_lives VALUES (?, ?, ?, ?)",
                 history_records
             )
 
@@ -550,15 +550,25 @@ async def get_today_new_block() -> list:
         return [row[0] for row in rows] if rows else []
 
 
-async def update_info_with_new_block(course_id, block_id):
-    current_date = datetime.now().strftime("%Y-%m-%d")
+async def update_lives(course_id):
     async with aiosqlite.connect('educated_platform.db') as con:
-        cursor = await con.execute('SELECT course_id FROM blocks WHERE block_start=?', current_date)
-        rows = await cursor.fetchall()
-        new_block_today = [row[0] for row in rows] if rows else []
-        if new_block_today:
-            await con.execute("BEGIN TRANSACTION")
+        await con.execute('UPDATE users SET lives = ? WHERE course_id = ? AND lives != ?', (3, course_id, 0))
+        await con.execute('''
+                   DELETE FROM history_of_lives
+                   WHERE user_id IN (
+                       SELECT user_id FROM users WHERE course_id = ?
+                   )''', (course_id,))
+        await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', ('all_users', None, 3, '+3'))
+        await con.commit()
 
 
-
-# async def get_list_lives(user)
+async def get_history_lives_user(user_id: int) -> list:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        query = '''SELECT h.lives_after_action, h.action, t.task_title
+                   FROM history_of_lives h
+                   LEFT JOIN tasks t ON t.task_id = h.task_id
+                   WHERE h.user_id = ? OR h.user_id = ?'''
+        async with con.execute(query, (user_id, 'all_users')) as cursor:
+            result = await cursor.fetchall()
+            return [dict(x) for x in result] if result else []
