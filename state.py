@@ -15,6 +15,7 @@ class AddTask(StatesGroup):
     choose_options = State()
     get_task_title = State()
     get_video = State()
+    get_files = State()
     get_abstract = State()
     verification = State()
     get_homework = State()

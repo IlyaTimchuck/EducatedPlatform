@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import aiosqlite
 from collections import defaultdict
 
+import pytz
+
 
 def current_datetime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -31,7 +33,7 @@ async def create_db() -> None:
             username TEXT,
             user_id INTEGER,
             course_id INTEGER,
-            timezone_id TEXT,
+            timezone_id INTEGER,
             date_of_joining TEXT,
             lives INTEGER,
             role TEXT)''')
@@ -49,10 +51,10 @@ async def create_db() -> None:
             task_title TEXT,
             task_id INTEGER PRIMARY KEY AUTOINCREMENT, 
             block_id INTEGER,
-            verification TEXT,
+            file_work BOOL,
             video_id TEXT,
             abstract_id TEXT,
-            availability_files BOOL,
+            link_files TEXT,
             deadline TEXT)''')
 
         await con.execute('''CREATE TABLE IF NOT EXISTS exercises (
@@ -92,6 +94,11 @@ async def create_db() -> None:
             lives_after_action INTEGER,
             action TEXT)''')  # action: +1, +3, -1...
 
+        # await con.execute('''CREATE TABLE IF NOT EXISTS  requires_verification (
+        #     user_id INTEGER,
+        #     task_id INTEGER,
+        #     file_id TEXT,
+        #     verified BOOL DEFAULT 0)''')
         await con.commit()
 
 
@@ -221,12 +228,13 @@ async def create_block(course_id: int, block_number: int) -> int:
         return cursor.lastrowid
 
 
-async def add_task(task_title: str, block_id: int, verification: str, video_id: str, abstract_id: str,
-                   availability_files: bool, deadline: str) -> int:
+async def add_task(task_title: str, block_id: int, file_work: bool, video_id: str, abstract_id: str,
+                   link_files: str | None, deadline: str) -> int:
     async with aiosqlite.connect('educated_platform.db') as con:
         await con.execute(
-            'INSERT INTO tasks (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline) VALUES(?, ?, ?, ?, ?, ?, ?)',
-            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline))
+            '''INSERT INTO tasks (task_title, block_id, file_work, video_id, abstract_id, link_files, deadline)
+                                                                        VALUES(?, ?, ?, ?, ?, ?, ?)''',
+            (task_title, block_id, file_work, video_id, abstract_id, link_files, deadline))
         await con.commit()
         task_id = await con.execute('SELECT task_id FROM tasks WHERE video_id = ?', (video_id,))
         return (await task_id.fetchone())[0]
@@ -248,21 +256,11 @@ async def add_exercise(task_id: int, exercise_condition: str, exercise_answer=No
 # mapping lesson
 async def get_list_exercises(task_id: int) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
-        cursor = await con.execute('SELECT verification FROM tasks WHERE task_id = ?', (task_id,))
-        verification_row = await cursor.fetchone()
-        verification = verification_row[0] if verification_row else None
-
-        if verification == 'Автоматическая проверка':
-            cursor = await con.execute(
-                'SELECT exercise_condition, exercise_answer, exercise_id FROM exercises WHERE task_id = ?',
-                (task_id,))
-            result = await cursor.fetchall()
-            return {num: (row[0], row[1], row[2]) for num, row in enumerate(result, 1)}
-        else:
-            cursor = await con.execute('SELECT exercise_condition, exercise_id FROM exercises WHERE task_id = ?',
-                                       (task_id,))
-            result = await cursor.fetchall()
-            return {num: (row[0], row[1]) for num, row in enumerate(result, 1)}
+        cursor = await con.execute(
+            'SELECT exercise_condition, exercise_answer, exercise_id FROM exercises WHERE task_id = ?',
+            (task_id,))
+        result = await cursor.fetchall()
+        return {num: (row[0], row[1], row[2]) for num, row in enumerate(result, 1)}
 
 
 async def get_list_tasks(block_id: int) -> dict:
@@ -276,9 +274,6 @@ async def get_list_tasks(block_id: int) -> dict:
                 return dict(row)
             else:
                 return {}
-
-
-from datetime import datetime
 
 
 async def mapping_task_status(user_id: int, task_id: int) -> str:
@@ -516,10 +511,13 @@ async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> No
             raise e
 
 
-async def get_today_deadline(user_id: int | None = None, timezone_id: int | None = None) -> None | list:
+async def get_today_deadline_for_remind(user_id: int) -> None | list:
     async with aiosqlite.connect('educated_platform.db') as con:
         if user_id:
-            current_deadline = datetime.now().strftime("%Y-%m-%d")
+            timezone_name = (await get_timezones())[timezone_id]
+            tz = pytz.timezone(timezone_name)
+            now = datetime.now(tz)
+            current_date = (now + timedelta(days=1)).strftime("%Y-%m-%d")
             query = '''SELECT t.task_title, u.lives
                            FROM tasks t 
                            JOIN blocks b ON b.block_id = t.block_id
@@ -527,19 +525,39 @@ async def get_today_deadline(user_id: int | None = None, timezone_id: int | None
                            WHERE u.user_id = ? AND t.deadline = ? 
                            '''
             con.row_factory = aiosqlite.Row
-            async with con.execute(query, (user_id, current_deadline)) as cursor:
+            async with con.execute(query, (user_id, current_date)) as cursor:
                 rows = await cursor.fetchall()
                 return [dict(row) for row in rows] if rows else []
         elif timezone_id:
             query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id
-                       FROM tasks t
-                       JOIN blocks b ON b.block_id = t.block_id
-                       JOIN users u ON u.course_id = b.block_id
-                       WHERE u.timezone_id = ?'''
+                                   FROM tasks t
+                                   JOIN blocks b ON t.block_id = b.block_id
+                                   JOIN users u ON b.course_id = u.course_id
+                                   WHERE u.timezone_id = ? AND t.deadline = ?'''
             con.row_factory = aiosqlite.Row
-            async with con.execute(query, (timezone_id,)) as cursor:
+            async with con.execute(query, (timezone_id, current_date)) as cursor:
                 rows = await cursor.fetchall()
                 return [dict(row) for row in rows] if rows else []
+
+
+async def get_today_deadline_for_keyboard(user_id: int):
+    async with aiosqlite.connect('educated_platform.db') as con:
+        timezone_name = '''SELECT timezone 
+                           FROM unique_timezones t
+                           JOIN users u ON t.timezone_id = u.timezone_id
+                           WHERE u.user_id = ?'''
+
+
+
+        query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id
+                                           FROM tasks t
+                                           JOIN blocks b ON t.block_id = b.block_id
+                                           JOIN users u ON b.course_id = u.course_id
+                                           WHERE u.timezone_id = ? AND t.deadline = ?'''
+        con.row_factory = aiosqlite.Row
+        async with con.execute(query, (timezone_id, current_date)) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(row) for row in rows] if rows else []
 
 
 async def get_today_new_block() -> list:

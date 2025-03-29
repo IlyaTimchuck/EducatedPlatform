@@ -14,12 +14,13 @@ async def record_answer(message: Message, state: FSMContext):
     quantity_exercise = state_data['quantity_exercise']
     current_exercise = state_data['current_exercise']
     condition, right_answer, exercise_id = state_data['homework'][current_exercise]
-    message_id = state_data['current_message_id']
+    message_id = state_data['homework_message_id']
     input_answer = message.text
     result_answer = (right_answer == input_answer)
     status_input_answer = '✅' if result_answer else '❌'
     text_message = f'{condition}\nТвой ответ: {input_answer} {status_input_answer}'
     answers = state_data.get('results', {})
+    file_work = state_data.get('file_work')
     prev_status = answers.get(current_exercise, {}).get('status_input_answer')
     quantity_right_answers = state_data.get('quantity_right_answers', 0)
 
@@ -39,5 +40,5 @@ async def record_answer(message: Message, state: FSMContext):
         chat_id=message.chat.id,
         message_id=message_id,
         text=text_message,
-        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise)
+        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, file_work)
     )
