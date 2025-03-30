@@ -45,7 +45,8 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
             InlineKeyboardButton(text='\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))
         builder.adjust(3)
     if file_work:
-        builder.row(*[InlineKeyboardButton(text='Сохранить ответы и перейти к отправке файла', callback_data='get_file_work')])
+        builder.row(
+            *[InlineKeyboardButton(text='Сохранить ответы и перейти к отправке файла', callback_data='get_file_work')])
     else:
         builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])
     return builder.as_markup()
@@ -137,7 +138,8 @@ async def choose_course_inline():
     builder = InlineKeyboardBuilder()
     courses = await db.get_list_courses()
     for course in courses:
-        builder.add(InlineKeyboardButton(text=course['course_title'], callback_data=f"choose_course:{course['course_title']}"))
+        builder.add(
+            InlineKeyboardButton(text=course['course_title'], callback_data=f"choose_course:{course['course_title']}"))
 
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
@@ -162,7 +164,7 @@ async def send_command_menu(user_id: int):
             [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
         ])
         lives = user_data['lives']
-        deadline_today = await db.get_today_deadline(user_id)
+        deadline_today = await db.get_today_deadline_for_keyboard(user_id)
         text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
         if deadline_today:
             text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}'
@@ -180,7 +182,8 @@ async def send_command_menu(user_id: int):
 
 async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> InlineKeyboardMarkup:
     button = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Приступить к выполнению задания', callback_data=f'open_task:{course_id}:{task_id}:1')]
+        [InlineKeyboardButton(text='Приступить к выполнению задания',
+                              callback_data=f'open_task:{course_id}:{task_id}:1')]
     ])
     return button
 
@@ -220,7 +223,6 @@ location_button = ReplyKeyboardMarkup(
     one_time_keyboard=True
 )
 
-
 confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Отменить', callback_data='cancel_update_block'),
      InlineKeyboardButton(text='Подтвердить', callback_data='confirm_new_block')]
@@ -228,4 +230,9 @@ confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 
 back_to_homework = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Вернуться к домашней работе', callback_data='open_homework')]
+])
+
+confirm_completing_work_file = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Вернуться назад', callback_data='open_homework'),
+     InlineKeyboardButton(text='Завершить', callback_data='complete_homework')]
 ])

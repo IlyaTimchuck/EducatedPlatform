@@ -1,5 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InputMediaVideo, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, InputMediaVideo, InlineKeyboardMarkup, Message
 from aiogram import Router, F
 from datetime import datetime
 
@@ -183,6 +183,29 @@ async def getting_file_work(callback_query: CallbackQuery, state: FSMContext):
         reply_markup=kb.back_to_homework,
         chat_id=callback_query.from_user.id, message_id=homework_message_id)
     await state.update_data(message_getting_file_work=sent_message.message_id)
+    await state.set_state(st.MappingExercise.getting_work_file)
+
+
+@router.message(st.MappingExercise.getting_work_file)
+async def getting_work_file(message: Message, state: FSMContext):
+    try:
+        file_work = message.document.file_id
+        state_data = await state.get_data()
+        print(state_data)
+        user_progress = ''
+        for exercise_num in range(1, len(state_data.get('homework')) + 1):
+            solve_user = state_data['results'].get(exercise_num)
+            if solve_user:
+                user_progress += f"{exercise_num}) {solve_user['input_answer']}{solve_user['status_input_answer']}\n"
+            else:
+                user_progress += f"{exercise_num}) Ответ не был дан❌\n"
+        await state.update_data(file_work=file_work)
+        await message.answer(text=f'Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?', reply_markup=kb.confirm_completing_work_file)
+    except Exception as e:
+        print(e)
+        await message.answer(
+            'Ошибка чтения файла. Проверь, правильный ли формат файла ты исползуешь. Отравь мне файл повторно')
+        await state.set_state(st.MappingExercise.getting_work_file)
 
 
 @router.callback_query(F.data == 'complete_homework')

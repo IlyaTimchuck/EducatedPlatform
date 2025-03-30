@@ -24,8 +24,7 @@ async def check_deadlines(timezone_id: int):
 
 
 async def send_deadline_reminder(timezone_id):
-    deadline_today = await db.get_today_deadline(user_id=None, timezone_id=timezone_id)
-    print(deadline_today)
+    deadline_today = await db.get_today_deadline_for_remind(timezone_id)
     if deadline_today:
         for deadline_data in deadline_today:
             text_message = f"Привет! Напоминаю, что сегодня в 0:00 дедлайн\nНазвание урока: {deadline_data['task_title']}"
@@ -60,7 +59,7 @@ async def update_jobs(scheduler):
 
         scheduler.add_job(
             send_deadline_reminder,
-            trigger=CronTrigger(hour=4, minute=14, timezone=tz_value),
+            trigger=CronTrigger(hour=1, minute=59, timezone=tz_value),
             args=[timezone_id],
             id=f"reminder_{timezone_id}"
         )
@@ -76,7 +75,7 @@ async def setup_monitoring():
 
     scheduler.add_job(
         update_jobs,
-        trigger=CronTrigger(hour=4, minute=13, timezone="Europe/Moscow"),
+        trigger=CronTrigger(hour=1, minute=58, timezone="Europe/Moscow"),
         args=[scheduler],
         id="global_update"
     )

@@ -511,51 +511,48 @@ async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> No
             raise e
 
 
-async def get_today_deadline_for_remind(user_id: int) -> None | list:
+async def get_today_deadline_for_remind(timezone_id: int) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
-        if user_id:
-            timezone_name = (await get_timezones())[timezone_id]
-            tz = pytz.timezone(timezone_name)
-            now = datetime.now(tz)
-            current_date = (now + timedelta(days=1)).strftime("%Y-%m-%d")
-            query = '''SELECT t.task_title, u.lives
-                           FROM tasks t 
-                           JOIN blocks b ON b.block_id = t.block_id
-                           JOIN users u ON b.course_id = u.course_id
-                           WHERE u.user_id = ? AND t.deadline = ? 
-                           '''
-            con.row_factory = aiosqlite.Row
-            async with con.execute(query, (user_id, current_date)) as cursor:
-                rows = await cursor.fetchall()
-                return [dict(row) for row in rows] if rows else []
-        elif timezone_id:
-            query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id
-                                   FROM tasks t
-                                   JOIN blocks b ON t.block_id = b.block_id
-                                   JOIN users u ON b.course_id = u.course_id
-                                   WHERE u.timezone_id = ? AND t.deadline = ?'''
-            con.row_factory = aiosqlite.Row
-            async with con.execute(query, (timezone_id, current_date)) as cursor:
-                rows = await cursor.fetchall()
-                return [dict(row) for row in rows] if rows else []
+        timezone_name = (await get_timezones())[timezone_id]
+        tz = pytz.timezone(timezone_name)
+        now = datetime.now(tz)
+        current_date = (now + timedelta(days=1)).strftime("%Y-%m-%d")
+        query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id
+                    FROM tasks t
+                    JOIN blocks b ON t.block_id = b.block_id
+                    JOIN users u ON b.course_id = u.course_id
+                    WHERE u.timezone_id = ? AND t.deadline = ?'''
+        con.row_factory = aiosqlite.Row
+        async with con.execute(query, (timezone_id, current_date)) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(row) for row in rows] if rows else []
 
 
 async def get_today_deadline_for_keyboard(user_id: int):
     async with aiosqlite.connect('educated_platform.db') as con:
-        timezone_name = '''SELECT timezone 
-                           FROM unique_timezones t
-                           JOIN users u ON t.timezone_id = u.timezone_id
-                           WHERE u.user_id = ?'''
+        # Получаем часовой пояс пользователя
+        timezone_name_cursor = await con.execute(
+            '''SELECT timezone 
+               FROM unique_timezones t
+               JOIN users u ON t.timezone_id = u.timezone_id
+               WHERE u.user_id = ?''', (user_id,)
+        )
+        timezone_tuple = await timezone_name_cursor.fetchone()
+        if not timezone_tuple:
+            raise ValueError("Часовой пояс не найден для пользователя")
+        tz_name = timezone_tuple[0]
+        tz = pytz.timezone(tz_name)
+        now = datetime.now(tz)
 
-
+        tomorrow_str = (now + timedelta(days=1)).strftime("%Y-%m-%d")
 
         query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id
-                                           FROM tasks t
-                                           JOIN blocks b ON t.block_id = b.block_id
-                                           JOIN users u ON b.course_id = u.course_id
-                                           WHERE u.timezone_id = ? AND t.deadline = ?'''
+                   FROM tasks t
+                   JOIN blocks b ON t.block_id = b.block_id
+                   JOIN users u ON b.course_id = u.course_id
+                   WHERE t.deadline = ?'''
         con.row_factory = aiosqlite.Row
-        async with con.execute(query, (timezone_id, current_date)) as cursor:
+        async with con.execute(query, (tomorrow_str,)) as cursor:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows] if rows else []
 

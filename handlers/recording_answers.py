@@ -23,7 +23,6 @@ async def record_answer(message: Message, state: FSMContext):
     file_work = state_data.get('file_work')
     prev_status = answers.get(current_exercise, {}).get('status_input_answer')
     quantity_right_answers = state_data.get('quantity_right_answers', 0)
-
     if prev_status is None:
         if result_answer:
             quantity_right_answers += 1
@@ -32,7 +31,6 @@ async def record_answer(message: Message, state: FSMContext):
             quantity_right_answers += 1
         elif prev_status == '✅' and not result_answer:
             quantity_right_answers -= 1
-
     answers[current_exercise] = {'input_answer': input_answer, 'status_input_answer': status_input_answer}
     await state.update_data(results=answers, quantity_right_answers=quantity_right_answers)
     await message.delete()
