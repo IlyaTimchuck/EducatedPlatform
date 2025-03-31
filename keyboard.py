@@ -158,9 +158,10 @@ async def choose_course_reply():
 async def send_command_menu(user_id: int):
     user_data = await db.get_data_user(user_id)
     if user_data['role'] == 'student':
+        # await
         command_menu = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
-            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='last_lesson')],
+            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='last_task')],
             [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
         ])
         lives = user_data['lives']

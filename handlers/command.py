@@ -31,23 +31,21 @@ async def command_menu(message: types.Message, state: FSMContext):
     session_end = state_data.get('session_end', None)
     reminder_message_id = state_data.get('reminder_message_id', None)
     notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id', None)
+    messages_getting_file_work = state_data.get('messages_getting_file_work')
     if message_menu_id:
         await bot.delete_message(chat_id=message.from_user.id, message_id=message_menu_id)
     if message_abstract_id:
         await bot.delete_message(chat_id=message.from_user.id, message_id=message_abstract_id)
     if reminder_message_id:
         await bot.delete_message(chat_id=message.from_user.id, message_id=reminder_message_id)
-    if session_start and not session_end:
-        task_data = state_data['task_data']
-        session_end = datetime.now().strftime("%Y-%m-%d")
-        quotient = int((state_data.get('quantity_right_answers', 0) / state_data['quantity_exercise']) * 100)
-        is_completed = quotient >= 90
-        await db.add_progress_user(message.from_user.id, task_data['task_id'], state_data['homework'],
-                                   state_data.get('results', {}), state_data['session_start'], session_end,
-                                   is_completed)
-        await bot.delete_message(chat_id=message.from_user.id, message_id=state_data['homework_message_id'])
     if notification_about_new_task_message_id:
         await bot.delete_message(chat_id=message.from_user.id, message_id=notification_about_new_task_message_id)
+    if messages_getting_file_work:
+        for message_id in messages_getting_file_work:
+            await bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+    elif session_start and not session_end:
+        await bot.delete_message(chat_id=message.from_user.id, message_id=state_data['homework_message_id'])
+
     text_message, keyboard = await kb.send_command_menu(message.from_user.id)
     new_command_menu_id = await message.answer(text_message, reply_markup=keyboard)
     await state.clear()

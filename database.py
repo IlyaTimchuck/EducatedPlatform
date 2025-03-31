@@ -587,3 +587,18 @@ async def get_history_lives_user(user_id: int) -> list:
         async with con.execute(query, (user_id, 'all_users')) as cursor:
             result = await cursor.fetchall()
             return [dict(x) for x in result] if result else []
+
+
+async def get_last_task(user_id):
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        query = '''SELECT u.course_id, t.task_id
+                   FROM users u
+                   JOIN blocks b ON u.course_id = b.course_id
+                   JOIN tasks t ON b.block_id = t.block_id
+                   WHERE u.user_id = ?
+                   ORDER BY t.deadline DESC 
+                   LIMIT 1;'''
+        async with con.execute(query, (user_id,)) as cursor:
+            last_task = await cursor.fetchone()
+            return dict(last_task)

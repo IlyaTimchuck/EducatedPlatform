@@ -27,3 +27,7 @@ async def opening_list_lives(callback_query: CallbackQuery):
         else:
             text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
     await callback_query.message.edit_text(text=text_message, reply_markup=kb.back_button_admin)
+
+
+# @router.callback_query(F.data == 'last_task')
+# async def opening_last_task()

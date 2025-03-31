@@ -63,7 +63,6 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     session = await db.get_last_session(callback_query.from_user.id, task_id)
     progress_user = await db.get_progress_user(task_id, session['session_id']) if session else \
         await db.get_progress_user(task_id)
-
     if progress_user:
         await state.update_data(results=progress_user)
         right_answers = len(
@@ -99,10 +98,11 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     file_work = state_data.get('file_work')
     homework = await db.get_list_exercises(state_data['task_data']['task_id'])
     await state.set_state(st.MappingExercise.solving_homework)
-    message_getting_file_work = state_data.get('message_getting_file_work')
-    if message_getting_file_work:
-        await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message_getting_file_work)
-        state_data.pop('message_getting_file_work')
+    messages_getting_file_work = state_data.get('messages_getting_file_work')
+    if messages_getting_file_work:
+        for message_id in messages_getting_file_work:
+            await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message_id)
+        state_data.pop('messages_getting_file_work')
         await state.set_data(state_data)
     quantity_exercise = len(homework)
     current_exercise = 1
@@ -178,20 +178,22 @@ async def getting_file_work(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     state_data = await state.get_data()
     homework_message_id = state_data.get('homework_message_id')
-    sent_message = await bot.edit_message_text(
+    await bot.edit_message_text(
         text='Твои ответы были сохранены. \nТеперь отправь рабочий файл с решениями',
         reply_markup=kb.back_to_homework,
         chat_id=callback_query.from_user.id, message_id=homework_message_id)
-    await state.update_data(message_getting_file_work=sent_message.message_id)
+    # print(sent_message.id)
+    await state.update_data(messages_getting_file_work=[homework_message_id])
     await state.set_state(st.MappingExercise.getting_work_file)
 
 
 @router.message(st.MappingExercise.getting_work_file)
 async def getting_work_file(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    messages_getting_file_work = state_data.get('messages_getting_file_work', [])
     try:
+        message_user_id = message.message_id
         file_work = message.document.file_id
-        state_data = await state.get_data()
-        print(state_data)
         user_progress = ''
         for exercise_num in range(1, len(state_data.get('homework')) + 1):
             solve_user = state_data['results'].get(exercise_num)
@@ -199,12 +201,15 @@ async def getting_work_file(message: Message, state: FSMContext):
                 user_progress += f"{exercise_num}) {solve_user['input_answer']}{solve_user['status_input_answer']}\n"
             else:
                 user_progress += f"{exercise_num}) Ответ не был дан❌\n"
-        await state.update_data(file_work=file_work)
-        await message.answer(text=f'Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?', reply_markup=kb.confirm_completing_work_file)
+        await bot.edit_message_reply_markup(chat_id=message.from_user.id, message_id=state_data['homework_message_id'], reply_markup=None)
+        sent_message = await message.answer(text=f'Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?', reply_markup=kb.confirm_completing_work_file)
+        messages_getting_file_work += [message_user_id, sent_message.message_id]
+        await state.update_data(file_work=file_work, messages_getting_file_work=messages_getting_file_work)
     except Exception as e:
         print(e)
-        await message.answer(
-            'Ошибка чтения файла. Проверь, правильный ли формат файла ты исползуешь. Отравь мне файл повторно')
+        sent_message = await message.answer(
+            'Ошибка чтения файла. Проверь, правильный ли формат файла ты используешь. Отправь мне файл повторно')
+        messages_getting_file_work += [sent_message.message_id]
         await state.set_state(st.MappingExercise.getting_work_file)
 
 
@@ -212,7 +217,15 @@ async def getting_work_file(message: Message, state: FSMContext):
 async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
-    session_end = datetime.now().strftime("%Y-%m-%d")
+    messages_getting_file_work = state_data.get('messages_getting_file_work')
+    print(messages_getting_file_work)
+    if messages_getting_file_work:
+        for message_id in messages_getting_file_work:
+            await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message_id)
+        await state.update_data(messages_getting_file_work=[])
+    else:
+        await callback_query.message.delete()
+    session_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     quotient = int((state_data.get('quantity_right_answers', 0) / state_data['quantity_exercise']) * 100)
     is_completed = quotient >= 90
     await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
@@ -221,16 +234,19 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer(
         'Домашняя работа была принята' if is_completed else 'Порог не был пройден. Нужно минимум 90%',
         show_alert=False if is_completed else True)
-    await callback_query.message.delete()
-    message_abstract_id = state_data.get('message_abstract_id', '')
+    text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'
+    link_files = task_data.get('link_files', None)
+    if link_files:
+        text_message += f'\n\nФайлы к домашней работе: {link_files}'
+    message_abstract_id = state_data.get('message_abstract_id', False)
     await callback_query.bot.edit_message_media(
         chat_id=callback_query.message.chat.id,
         message_id=state_data['task_message_id'],
         media=InputMediaVideo(
             media=task_data['video_id'],
-            caption=f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'),
+            caption=text_message),
         reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'],
-                                           bool(message_abstract_id))
+                                            bool(message_abstract_id))
     )
 
 
