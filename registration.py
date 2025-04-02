@@ -13,17 +13,17 @@ import utils
 router = Router()
 
 
-@router.message(st.Registration.get_name_user)
-async def getting_name_user(message: Message, state: FSMContext):
-    name_user = message.text
-    reg_msg_for_deletion = await state.get_value('reg_msg_for_deletion', [])
-    sent_message = await message.answer(
-        'Теперь отправь мне свою локацию или название ближайшего большого города. Это нужно для корректного отображения дедлайнов',
-        reply_markup=kb.location_button)
-    reg_msg_for_deletion += [sent_message.message_id]
-    reg_msg_for_deletion += [message.message_id]
-    await state.update_data(name_user=name_user, reg_msg_for_deletion=reg_msg_for_deletion)
-    await state.set_state(st.Registration.get_location_user)
+# @router.message(st.Registration.get_name_user)
+# async def getting_name_user(message: Message, state: FSMContext):
+#     name_user = message.text
+#     reg_msg_for_deletion = await state.get_value('reg_msg_for_deletion', [])
+#     sent_message = await message.answer(
+#         'Теперь отправь мне свою локацию или название ближайшего большого города. Это нужно для корректного отображения дедлайнов',
+#         reply_markup=kb.location_button)
+#     reg_msg_for_deletion += [sent_message.message_id]
+#     reg_msg_for_deletion += [message.message_id]
+#     await state.update_data(name_user=name_user, reg_msg_for_deletion=reg_msg_for_deletion)
+#     await state.set_state(st.Registration.get_location_user)
 
 
 @router.message(st.Registration.get_location_user)
@@ -61,7 +61,7 @@ async def registration_user(message: Message, state: FSMContext):
         return
     role = 'student' #if message.from_user.id != 795508218 else 'admin'
     # Регистрируем пользователя в базе данных
-    result = await db.registration_user(state_data['name_user'], message.from_user.id, timezone_name, role)
+    result = await db.registration_user(message.from_user.username, message.from_user.id, timezone_name, role)
     if result:
         text_message, keyboard = await kb.send_command_menu(message.from_user.id)
         text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
@@ -74,6 +74,6 @@ async def registration_user(message: Message, state: FSMContext):
             await state.set_data(state_data)
     else:
         sent_message_3 = await message.answer(
-            'Ты не был добавлен админом на курс, попробуй проверить данные и ввести отправить мне их заново, или обратиться к администратору :(')
+            'Ты не был добавлен админом на курс. Тебе нужно обратиться к админу :(')
         reg_msg_for_deletion += [sent_message_3.message_id]
-        await state.set_state(st.Registration.get_name_user)
+        await state.set_state(st.Registration.get_location_user)

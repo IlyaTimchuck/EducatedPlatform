@@ -182,7 +182,6 @@ async def getting_file_work(callback_query: CallbackQuery, state: FSMContext):
         text='Твои ответы были сохранены. \nТеперь отправь рабочий файл с решениями',
         reply_markup=kb.back_to_homework,
         chat_id=callback_query.from_user.id, message_id=homework_message_id)
-    # print(sent_message.id)
     await state.update_data(messages_getting_file_work=[homework_message_id])
     await state.set_state(st.MappingExercise.getting_work_file)
 
@@ -218,7 +217,6 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
     messages_getting_file_work = state_data.get('messages_getting_file_work')
-    print(messages_getting_file_work)
     if messages_getting_file_work:
         for message_id in messages_getting_file_work:
             await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message_id)

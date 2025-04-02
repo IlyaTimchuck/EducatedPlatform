@@ -1,5 +1,4 @@
 from asyncio import run, create_task, CancelledError
-from aiogram import Bot, Dispatcher
 from handlers.__init__ import setup_routers
 from callbacks.__init__ import setup_routers_callbacks
 from bot_instance import bot, dp
@@ -13,7 +12,7 @@ async def main() -> None:
     await db.create_db()
     await db.create_course('Тестовый')
     course_id = await db.get_course_id('Тестовый')
-    await db.add_users(['f'], course_id)
+    await db.add_users(['itimchuck'], course_id)
     await db.add_users(['try_user'], course_id)
     monitor_task = create_task(setup_monitoring())
     task_id = await db.add_task('Задание 16', course_id, True,

@@ -158,10 +158,11 @@ async def choose_course_reply():
 async def send_command_menu(user_id: int):
     user_data = await db.get_data_user(user_id)
     if user_data['role'] == 'student':
-        # await
+        last_task = await db.get_last_task(user_id)
+        callback_data_last_task = f'open_task:{last_task['course_id']}:{last_task['task_id']}:0' if last_task else 'ignore'
         command_menu = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
-            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='last_task')],
+            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data=callback_data_last_task)],
             [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
         ])
         lives = user_data['lives']

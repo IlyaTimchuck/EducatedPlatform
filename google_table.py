@@ -1,8 +1,8 @@
 from google.oauth2.service_account import Credentials
 import gspread
+import database as db
 
-
-def get_exersice():
+def get_exersice() -> list|str:
     try:
         SERVICE_ACCOUNT_FILE = "educatedplatform-8219d1d704e8.json"
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -18,3 +18,8 @@ def get_exersice():
     except Exception as e:
         print(e)
         return 'Ошибка на стороне Google, попробуй еще раз'
+
+
+# def add_user_in_sheets(username, user_id, course_id, timezone_id, date_of_joining) -> None:
+#     lives = 3
+#     course_title = await db.

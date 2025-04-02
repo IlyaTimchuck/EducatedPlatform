@@ -16,9 +16,9 @@ router = Router()
 
 @router.message(Command(commands=['start']))
 async def start(message: types.Message, state: FSMContext):
-    sent_message = await message.answer('Привет! Чтобы начать обучение отправь мне свои ФИО')
     message_user = message.message_id
-    await state.set_state(st.Registration.get_name_user)
+    sent_message = await message.answer(f'Привет! Чтобы тебя зарегистрировать мне нужно знать твой часовой пояс. Для этого ты можешь отправить мне свою геолокацию или назвать большой город с твоим часовым поясом')
+    await state.set_state(st.Registration.get_location_user)
     await state.update_data(reg_msg_for_deletion=[sent_message.message_id, message_user])
 
 
