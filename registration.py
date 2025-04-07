@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
@@ -8,7 +10,7 @@ import state as st
 import database as db
 import keyboard as kb
 import utils
-
+from google_table import google_client
 
 router = Router()
 
@@ -43,7 +45,8 @@ async def registration_user(message: Message, state: FSMContext):
         geolocator = Nominatim(user_agent="timezone_app")
         location = geolocator.geocode(message.text)
         if location is None:
-            sent_message_1 = await message.answer("Город не найден. Пожалуйста, проверьте название и попробуйте еще раз.")
+            sent_message_1 = await message.answer(
+                "Город не найден. Пожалуйста, проверьте название и попробуйте еще раз.")
             reg_msg_for_deletion += [sent_message_1.message_id]
             return
         latitude = location.latitude
@@ -56,13 +59,17 @@ async def registration_user(message: Message, state: FSMContext):
     tf = TimezoneFinder()
     timezone_name = tf.timezone_at(lat=latitude, lng=longitude)
     if timezone_name is None:
-        sent_message_2 = await message.answer("Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
+        sent_message_2 = await message.answer(
+            "Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
         reg_msg_for_deletion += [sent_message_2.message_id]
         return
     role = 'student' #if message.from_user.id != 795508218 else 'admin'
     # Регистрируем пользователя в базе данных
-    result = await db.registration_user(message.from_user.username, message.from_user.id, timezone_name, role)
-    if result:
+    course_user = await db.registration_user(message.from_user.username, message.from_user.id, timezone_name, role)
+    if course_user:
+        date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await google_client.add_user_in_table(message.from_user.username, course_user[1], message.from_user.id,
+                                              timezone_name, date_of_joining, role, 3)
         text_message, keyboard = await kb.send_command_menu(message.from_user.id)
         text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
         await utils.del_messages(message.from_user.id, reg_msg_for_deletion)

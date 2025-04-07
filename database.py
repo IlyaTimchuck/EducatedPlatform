@@ -1,4 +1,3 @@
-from typing import Any, Coroutine
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 import aiosqlite
@@ -128,7 +127,7 @@ async def user_is_unregistered(username: str) -> bool:
         return bool(row[0])
 
 
-async def registration_user(username: str, user_id: int, timezone: str, role: str) -> None:
+async def registration_user(username: str, user_id: int, timezone: str, role: str) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
         tz_record = await (await con.execute(
             "SELECT timezone_id FROM unique_timezones WHERE timezone = ?",
@@ -144,15 +143,18 @@ async def registration_user(username: str, user_id: int, timezone: str, role: st
         timezone_id = tz_record[0]
         date_of_joining = current_datetime()
         lives = 3
-        cursor = await con.execute('SELECT course_id FROM unregistered WHERE username = ?', (username,))
-        course_id = await cursor.fetchone()
-        if course_id:
+        cursor = await con.execute('''SELECT c.course_id, c.course_title
+                    FROM unregistered un
+                    JOIN courses c ON c.course_id = un.course_id
+                    WHERE un.username = ?''', (username,))
+        course_data = (await cursor.fetchall())[0]
+        if course_data:
             await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)',
-                              (username, user_id, course_id[0], timezone_id, date_of_joining, lives, role))
+                              (username, user_id, course_data[0], timezone_id, date_of_joining, lives, role))
             await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
             await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))
             await con.commit()
-        return course_id
+        return course_data
 
 
 # Other function

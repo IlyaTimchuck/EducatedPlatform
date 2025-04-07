@@ -4,7 +4,8 @@ from aiogram.types import CallbackQuery, Message
 from aiogram import Router, F
 from datetime import datetime
 from bot_instance import bot, dp
-from google_table import get_exersice
+from google_table import google_client
+
 
 import calendar
 import state as st
@@ -230,7 +231,7 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['file_work'],
                                 state_data['video_id'], state_data['abstract_id'], link_files,
                                 state_data['deadline'])
-    exercises = get_exersice()
+    exercises = await google_client.get_exersice()
     for exercise in exercises:
         exercise_condition = exercise[0]
         exercise_answer = exercise[1]
