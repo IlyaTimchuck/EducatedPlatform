@@ -3,7 +3,9 @@ from handlers.__init__ import setup_routers
 from callbacks.__init__ import setup_routers_callbacks
 from bot_instance import bot, dp
 from deadline import setup_monitoring
+from google_table import setup_google_polling_loop, google_client
 import database as db
+import asyncio
 
 
 async def main() -> None:
@@ -15,6 +17,7 @@ async def main() -> None:
     await db.add_users(['itimchuck'], course_id)
     await db.add_users(['try_user'], course_id)
     monitor_task = create_task(setup_monitoring())
+    google_polling_task = create_task(setup_google_polling_loop(google_client))
     task_id = await db.add_task('Задание 16', course_id, True,
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
@@ -33,14 +36,7 @@ IP-адрес сети: 192.168.248.176
 Сетевая маска: 255.255.255.240
 Необходимо узнать, сколько в этой сети IP-адресов, для которых количество единиц и нулей в двоичной записи IP-адреса одинаково.''',
                           '43')
-    #
-    # task_id1 = await db.add_task('Тестовый 2', course_id, 'Автоматическая проверка',
-    #                             'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
-    #                             'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
-    #                             None, '2025-03-10')
-    # await db.add_exercise(task_id1,
-    #                       '''Хуй попа жопа''',
-    #                       'сиси')
+
     try:
         await dp.start_polling(bot)
     finally:

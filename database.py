@@ -25,11 +25,12 @@ async def create_db() -> None:
         await con.execute("DROP TABLE IF EXISTS history_of_lives")
 
         await con.execute('''CREATE TABLE IF NOT EXISTS unregistered (
-            username TEXT,
+            telegram_username TEXT,
             course_id INTEGER)''')
 
         await con.execute('''CREATE TABLE IF NOT EXISTS users (
-            username TEXT,
+            real_name TEXT,
+            telegram_username TEXT,
             user_id INTEGER,
             course_id INTEGER,
             timezone_id INTEGER,
@@ -112,22 +113,22 @@ async def create_course(course_title) -> None:
         await con.commit()
 
 
-async def add_users(usernames: list, course_id: int) -> None:
+async def add_users(telegram_usernames: list, course_id: int) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
-        for user in usernames:
-            await con.execute('INSERT INTO unregistered VALUES(?, ?)', (user, course_id))
+        for username in telegram_usernames:
+            await con.execute('INSERT INTO unregistered VALUES(?, ?)', (username, course_id))
         await con.commit()
 
 
-async def user_is_unregistered(username: str) -> bool:
+async def user_is_unregistered(telegram_username: str) -> bool:
     async with aiosqlite.connect('educated_platform.db') as con:
         result = await con.execute('''SELECT EXISTS 
-        (SELECT 1 FROM unregistered WHERE username = ?)''', (username,))
+        (SELECT 1 FROM unregistered WHERE telegram_username = ?)''', (telegram_username,))
         row = await result.fetchone()
         return bool(row[0])
 
 
-async def registration_user(username: str, user_id: int, timezone: str, role: str) -> list:
+async def registration_user(real_name: str, telegram_username: str, user_id: int, timezone: str, role: str) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
         tz_record = await (await con.execute(
             "SELECT timezone_id FROM unique_timezones WHERE timezone = ?",
@@ -146,13 +147,13 @@ async def registration_user(username: str, user_id: int, timezone: str, role: st
         cursor = await con.execute('''SELECT c.course_id, c.course_title
                     FROM unregistered un
                     JOIN courses c ON c.course_id = un.course_id
-                    WHERE un.username = ?''', (username,))
+                    WHERE un.telegram_username = ?''', (telegram_username,))
         course_data = (await cursor.fetchall())[0]
         if course_data:
-            await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)',
-                              (username, user_id, course_data[0], timezone_id, date_of_joining, lives, role))
+            await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                              (real_name, telegram_username, user_id, course_data[0], timezone_id, date_of_joining, lives, role))
             await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
-            await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))
+            await con.execute('DELETE FROM unregistered WHERE telegram_username = ?', (telegram_username,))
             await con.commit()
         return course_data
 
