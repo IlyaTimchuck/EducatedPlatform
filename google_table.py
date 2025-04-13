@@ -100,12 +100,12 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient):
                 worksheet = await google_sheets_client._spreadsheet.worksheet('users')
                 data = await worksheet.get_all_values()
                 print(data)
-            await asyncio.sleep(60)
+            await asyncio.sleep(5)
         except Exception as e:
             print(e)
             await bot.send_message(chat_id=795508218,
                                    text=f'В мониторинге google_polling_loop произошла ошибка: {e}')
-            await asyncio.sleep(60)
+            await asyncio.sleep(1)
 
 
 
