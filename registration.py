@@ -16,11 +16,10 @@ router = Router()
 
 @router.message(st.Registration.get_name_user)
 async def getting_name_user(message: Message, state: FSMContext):
-    name_user = message.text
-    name_user_split = name_user.split()
+    name_user_split = message.text.split()
     reg_msg_for_deletion = await state.get_value('reg_msg_for_deletion', [])
     if len(name_user_split) == 2 and len(name_user_split[0]) >= 2 and len(name_user_split[1]) >= 2:
-        # name_user = name_user_split[0].upper() + name_user_split[0][1:]
+        name_user = f'{name_user_split[0][0].upper()}{name_user_split[0][1:].lower()} {name_user_split[1][0].upper()}{name_user_split[1][1:].lower()}'
         sent_message = await message.answer(
             'Теперь отправь мне свою локацию или название ближайшего большого города. Это нужно для корректного отображения дедлайнов',
             reply_markup=kb.location_button)
@@ -46,8 +45,6 @@ async def registration_user(message: Message, state: FSMContext):
     if message.location:
         latitude = message.location.latitude
         longitude = message.location.longitude
-        message_id = message.message_id
-        reg_msg_for_deletion += [message_id]
     # Если отправлен текст, считаем, что это название города и проводим геокодинг
     elif message.text:
         geolocator = Nominatim(user_agent="timezone_app")
