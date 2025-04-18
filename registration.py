@@ -75,13 +75,13 @@ async def registration_user(message: Message, state: FSMContext):
                                              timezone_name, role)
     if course_user:
         date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        await google_client.add_user_in_table(real_name_user, message.from_user.username, course_user[1],
-                                              message.from_user.id,
-                                              timezone_name, date_of_joining, role, 3)
         text_message, keyboard = await kb.send_command_menu(message.from_user.id)
         text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
         await utils.del_messages(message.from_user.id, reg_msg_for_deletion)
         message_menu = await message.answer(text_message, reply_markup=keyboard)
+        await google_client.add_user_in_table(real_name_user, message.from_user.username, course_user[1],
+                                              message.from_user.id,
+                                              timezone_name, date_of_joining, role, 3)
         state_data['command_menu_id'] = message_menu.message_id
         state_data.pop('reg_msg_for_deletion')
         if role == 'student':

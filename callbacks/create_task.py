@@ -88,7 +88,7 @@ async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
         year = datetime.now().year
         month = datetime.now().month
         block_id = await db.create_block(state_data['course_id'], state_data['selected_block'])
-        await db.update_lives(state_data['course_id'])
+        await db.update_lives_with_new_block(state_data['course_id'])
         await state.update_data(block_id=block_id)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',

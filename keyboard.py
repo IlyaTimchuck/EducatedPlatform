@@ -190,6 +190,13 @@ async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> Inli
     return button
 
 
+async def confirm_deleting_user(user_id: int) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Отменить', callback_data=f'cancel_deleting:{user_id}'),
+         InlineKeyboardButton(text='Подтвердить', callback_data=f'confirm_deleting:{user_id}')]
+    ])
+    return keyboard
+
 back_button_student = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Назад', callback_data='back_student')]
 ])

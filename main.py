@@ -1,23 +1,24 @@
 from asyncio import run, create_task, CancelledError
 from handlers.__init__ import setup_routers
 from callbacks.__init__ import setup_routers_callbacks
+from command_menu_admin import router as command_menu_admin_router
 from bot_instance import bot, dp
 from deadline import setup_monitoring
 from google_table import setup_google_polling_loop, google_client
 import database as db
-import asyncio
 
 
 async def main() -> None:
     setup_routers(dp)
     setup_routers_callbacks(dp)
+    dp.include_router(command_menu_admin_router)
     await db.create_db()
     await db.create_course('Тестовый')
     course_id = await db.get_course_id('Тестовый')
     await db.add_users(['itimchuck'], course_id)
     await db.add_users(['try_user'], course_id)
     monitor_task = create_task(setup_monitoring())
-    google_polling_task = create_task(setup_google_polling_loop(google_client))
+    create_task(setup_google_polling_loop(google_client))
     task_id = await db.add_task('Задание 16', course_id, True,
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
