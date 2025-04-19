@@ -66,7 +66,14 @@ class GoogleSheetsClient:
                     date_of_joining, role, status, f'{lives}❤️', '-']
         await worksheet.append_row(row_data)
 
-    async def check_for_updates(self):
+    async def add_deadlines_in_table(self, course_id: int, task_id: int) -> None:
+        await self._ensure_authorized('add_deadlines_in_table')
+        worksheet = await self.spreadsheet.worksheet('deadlines')
+        list_users = await db.get_users_by_course(course_id)
+
+
+
+    async def check_for_updates(self) -> bool:
         await self._ensure_authorized('check_for_updates')
         drive_service = await self._init_drive_service()
 
@@ -93,7 +100,7 @@ google_client = GoogleSheetsClient(creds_file='educatedplatform-a40aded26c1c.jso
                                    spreadsheet_id='1dRVN0o5TVgZ7zfcPZOej8VCq508xeWfNhPLexWTINWE')
 
 
-async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient):
+async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) -> None:
     await google_sheets_client.check_for_updates()
     while True:
         try:
@@ -104,7 +111,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient):
                 data = (await worksheet.get_all_values())[1:]
                 for num_row, row_data in enumerate(data, 2):
                     print(row_data)
-                    if row_data[-3] == 'deleted':
+                    if row_data[-3] == 'deactivate':
                         username = row_data[1]
                         user_id = row_data[3]
                         await worksheet.delete_rows(num_row)

@@ -21,102 +21,119 @@ async def create_db() -> None:
         await con.execute("DROP TABLE IF EXISTS learning_progress")
         await con.execute("DROP TABLE IF EXISTS sessions")
         await con.execute("DROP TABLE IF EXISTS changed_deadlines")
-        await con.execute("DROP TABLE IF EXISTS unique_timezones")
+        await con.execute("DROP TABLE IF EXISTS timezones")
         await con.execute("DROP TABLE IF EXISTS history_of_lives")
 
         await con.execute("PRAGMA foreign_keys = ON;")
 
-        await con.execute('''CREATE TABLE IF NOT EXISTS unregistered (
-            telegram_username TEXT,
-            course_id INTEGER,
-            FOREIGN KEY(course_id) REFERENCES courses(course_id) ON DELETE CASCADE
-        )''')
+        await con.execute("""CREATE TABLE IF NOT EXISTS courses (
+                    course_title TEXT,
+                    course_id INTEGER PRIMARY KEY AUTOINCREMENT
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS timezones (
+                    timezone TEXT,
+                    timezone_id INTEGER PRIMARY KEY AUTOINCREMENT
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS users (
+                    real_name TEXT,
+                    telegram_username TEXT,
+                    user_id INTEGER PRIMARY KEY,
+                    course_id INTEGER,
+                    timezone_id INTEGER,
+                    date_of_joining TEXT,
+                    lives INTEGER,
+                    role TEXT,
+                    FOREIGN KEY(course_id) REFERENCES courses(course_id),
+                    FOREIGN KEY(timezone_id) REFERENCES timezones(timezone_id)
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS unregistered (
+                    telegram_username TEXT,
+                    course_id INTEGER,
+                    FOREIGN KEY(course_id) REFERENCES courses(course_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS blocks (
+                    course_id INTEGER,
+                    block_number INTEGER,
+                    block_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    FOREIGN KEY(course_id) REFERENCES courses(course_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS tasks (
+                    task_title TEXT,
+                    task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    block_id INTEGER,
+                    file_work BOOL,
+                    video_id TEXT,
+                    abstract_id TEXT,
+                    link_files TEXT,
+                    deadline TEXT,
+                    FOREIGN KEY(block_id) REFERENCES blocks(block_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS exercises (
+                    task_id INTEGER,
+                    exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    exercise_condition TEXT,
+                    exercise_answer TEXT,
+                    FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS sessions (
+                    session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    task_id INTEGER,
+                    is_completed BOOL,
+                    session_start TEXT,
+                    session_end TEXT,
+                    FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                    FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS learning_progress (
+                    user_id INTEGER,
+                    exercise_id INTEGER,
+                    input_answer TEXT,
+                    right_answer BOOL,
+                    session_id INTEGER,
+                    FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                    FOREIGN KEY(exercise_id) REFERENCES exercises(exercise_id) ON DELETE CASCADE,
+                    FOREIGN KEY(session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS changed_deadlines (
+                    user_id INTEGER,
+                    task_id INTEGER,
+                    deadline TEXT,
+                    PRIMARY KEY(user_id, task_id),
+                    FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                    FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS history_of_lives (
+                    user_id INTEGER,
+                    task_id INTEGER,
+                    lives_after_action INTEGER,
+                    action TEXT,
+                    FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                    FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+                )""")
+        await con.execute("""CREATE TRIGGER IF NOT EXISTS delete_empty_course
+                    AFTER DELETE ON users
+                    BEGIN
+                        DELETE FROM courses
+                        WHERE course_id = OLD.course_id
+                        AND NOT EXISTS (
+                            SELECT 1 FROM users 
+                            WHERE course_id = OLD.course_id
+                            )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM unregistered
+                            WHERE course_id = OLD.course_id
+                            );
+                    END""")
 
-        await con.execute('''CREATE TABLE IF NOT EXISTS users (
-            real_name TEXT,
-            telegram_username TEXT,
-            user_id INTEGER,
-            course_id INTEGER,
-            timezone_id INTEGER,
-            date_of_joining TEXT,
-            lives INTEGER,
-            role TEXT,
-            FOREIGN KEY(course_id) REFERENCES courses(course_id)
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS courses (
-            course_title TEXT,
-            course_id INTEGER PRIMARY KEY AUTOINCREMENT
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS blocks (
-            course_id INTEGER,
-            block_number INTEGER, 
-            block_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            FOREIGN KEY(course_id) REFERENCES courses(course_id) ON DELETE CASCADE
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS tasks (
-            task_title TEXT,
-            task_id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            block_id INTEGER,
-            file_work BOOL,
-            video_id TEXT,
-            abstract_id TEXT,
-            link_files TEXT,
-            deadline TEXT,
-            FOREIGN KEY(block_id) REFERENCES courses(block_id) ON DELETE CASCADE
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS exercises (
-            task_id INTEGER,
-            exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            exercise_condition TEXT,
-            exercise_answer TEXT,
-            FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS learning_progress (
-            user_id INTEGER, 
-            exercise_id INTEGER, 
-            input_answer TEXT, 
-            right_answer BOOL, 
-            session_id INTEGER,
-            FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS sessions (
-            session_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            task_id INTEGER,
-            is_completed BOOL,
-            session_start TEXT,
-            session_end TEXT,
-            FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-            FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS changed_deadlines (
-            user_id INTEGER,
-            task_id INTEGER,
-            deadline TEXT,
-            PRIMARY KEY (user_id, task_id),
-            FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-            FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS unique_timezones (
-            timezone TEXT,
-            timezone_id INTEGER PRIMARY KEY AUTOINCREMENT
-        )''')
-
-        await con.execute('''CREATE TABLE IF NOT EXISTS history_of_lives (
-            user_id INTEGER,
-            task_id INTEGER,
-            lives_after_action INTEGER,
-            action TEXT,
-            FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
-        )''')
+        await con.execute("""CREATE TRIGGER IF NOT EXISTS delete_empty_timezone
+                            AFTER DELETE ON users
+                            BEGIN
+                                DELETE FROM timezones
+                                WHERE timezone_id = OLD.timezone_id
+                                AND NOT EXISTS (
+                                    SELECT 1 FROM users WHERE timezone_id = OLD.timezone_id);
+                            END""")
 
         # await con.execute('''CREATE TABLE IF NOT EXISTS  requires_verification (
         #     user_id INTEGER,
@@ -155,12 +172,12 @@ async def user_is_unregistered(telegram_username: str) -> bool:
 async def registration_user(real_name: str, telegram_username: str, user_id: int, timezone: str, role: str) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
         tz_record = await (await con.execute(
-            "SELECT timezone_id FROM unique_timezones WHERE timezone = ?",
+            "SELECT timezone_id FROM timezones WHERE timezone = ?",
             (timezone,))).fetchone()
 
         if not tz_record:
             await con.execute(
-                "INSERT INTO unique_timezones (timezone) VALUES (?)",
+                "INSERT INTO timezones (timezone) VALUES (?)",
                 (timezone,)
             )
             tz_record = await (await con.execute("SELECT last_insert_rowid()")).fetchone()
@@ -440,7 +457,7 @@ async def get_last_session(user_id: int, task_id: int) -> dict:
 async def get_timezones() -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
-        query = 'SELECT * FROM unique_timezones'
+        query = 'SELECT * FROM timezones'
         async with await con.execute(query) as cursor:
             rows = await cursor.fetchall()
             return {row["timezone_id"]: row["timezone"] for row in rows} if rows else {}
@@ -481,8 +498,8 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
 
 async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
-        # Получаем значение timezone из unique_timezones
-        async with con.execute("SELECT timezone FROM unique_timezones WHERE timezone_id = ?", (timezone_id,)) as cur:
+        # Получаем значение timezone из timezones
+        async with con.execute("SELECT timezone FROM timezones WHERE timezone_id = ?", (timezone_id,)) as cur:
             row = await cur.fetchone()
             if not row:
                 raise ValueError(f"Timezone with id {timezone_id} not found")
@@ -561,7 +578,7 @@ async def get_today_deadline_for_keyboard(user_id: int):
         # Получаем часовой пояс пользователя
         timezone_name_cursor = await con.execute(
             '''SELECT timezone 
-               FROM unique_timezones t
+               FROM timezones t
                JOIN users u ON t.timezone_id = u.timezone_id
                WHERE u.user_id = ?''', (user_id,)
         )
@@ -657,5 +674,6 @@ async def get_course_title(course_id: int) -> str:
 
 async def delete_all_user_data(user_id: int) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
+        await con.execute("PRAGMA foreign_keys = ON;")
         await con.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
         await con.commit()

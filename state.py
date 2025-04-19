@@ -20,7 +20,6 @@ class AddTask(StatesGroup):
     verification = State()
     get_homework = State()
 
-
 class MappingExercise(StatesGroup):
     mapping_command_menu = State()
     mapping_task = State()
