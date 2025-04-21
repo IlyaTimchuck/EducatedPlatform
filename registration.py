@@ -68,7 +68,7 @@ async def registration_user(message: Message, state: FSMContext):
             "Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
         reg_msg_for_deletion += [sent_message_2.message_id]
         return
-    role = 'student'  # if message.from_user.id != 795508218 else 'admin'
+    role = 'student' if message.from_user.id != 795508218 else 'admin'
     real_name_user = state_data['real_name']
     # Регистрируем пользователя в базе данных
     course_user = await db.registration_user(real_name_user, message.from_user.username, message.from_user.id,

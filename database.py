@@ -203,9 +203,13 @@ async def registration_user(real_name: str, telegram_username: str, user_id: int
 # Other function
 async def get_users_by_course(course_id: int) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
-        cursor = await con.execute('SELECT user_id FROM users WHERE course_id=? AND role = ?', (course_id, 'student'))
-        result = await cursor.fetchall()
-        return [x[0] for x in result] if result else []
+        con.row_factory = aiosqlite.Row
+        query = '''SELECT u.*, c.course_title FROM users u 
+                   JOIN courses c ON u.course_id = c.course_id
+                   WHERE u.course_id=? AND u.role = ?'''
+        async with con.execute(query, (course_id, 'student')) as cursor:
+            users_data = await cursor.fetchall()
+            return [dict(row) for row in users_data] if users_data else []
 
 
 async def get_data_user(user_id: int) -> dict:
