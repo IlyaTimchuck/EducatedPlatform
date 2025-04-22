@@ -126,7 +126,7 @@ async def select_day(callback_query: CallbackQuery):
 async def choose_verification(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     _, file_work, deadline_date = callback_query.data.split(':')
-    file_work = bool(file_work)
+    file_work = bool(int(file_work))
     day, month, year = deadline_date.split('-')
     await state.update_data(file_work=file_work, deadline=deadline_date)
     await callback_query.message.edit_text(
@@ -226,12 +226,11 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     """Создаем task. Проверяем, есть ли в задании автопроверка."""
     await callback_query.answer()
     state_data = await state.get_data()
-    print(state_data)
     link_files = state_data.get('link_files', None)
     task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['file_work'],
                                 state_data['video_id'], state_data['abstract_id'], link_files,
                                 state_data['deadline'])
-    exercises = await google_client.get_exersice()
+    exercises = await google_client.get_exercise()
     for exercise in exercises:
         exercise_condition = exercise[0]
         exercise_answer = exercise[1]
@@ -241,8 +240,10 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     data_in_table = []
     for user_data in users_by_course:
         user_id = user_data['user_id']
-        data_in_table += [user_data['real_name'], user_data['telegram_username'], user_data['course_title'],
-                          state_data['task_title'], state_data['deadline'], task_id]
+        deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d').strftime('%Y/%m/%d')
+        data_in_table.append([user_data['real_name'], user_data['telegram_username'], user_data['course_title'],
+                              state_data['task_title'], deadline, user_data['timezone'], task_id, user_id,
+                              '-'])
         notification_about_new_task = await bot.send_message(chat_id=user_id,
                                                              text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему жми на кнопку!',
                                                              reply_markup=await kb.start_the_task_from_the_reminder(
@@ -251,3 +252,4 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
         storage_key = StorageKey(bot_id=bot.id, chat_id=user_id, user_id=user_id)
         state = FSMContext(storage=dp.storage, key=storage_key)
         await state.update_data(notification_about_new_task_message_id=notification_about_new_task.message_id)
+    await google_client.add_deadlines_in_table(data_in_table)

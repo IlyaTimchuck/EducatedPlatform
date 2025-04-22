@@ -204,8 +204,9 @@ async def registration_user(real_name: str, telegram_username: str, user_id: int
 async def get_users_by_course(course_id: int) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
-        query = '''SELECT u.*, c.course_title FROM users u 
+        query = '''SELECT u.*, c.course_title, t.timezone FROM users u 
                    JOIN courses c ON u.course_id = c.course_id
+                   JOIN timezones t ON u.timezone_id = t.timezone_id
                    WHERE u.course_id=? AND u.role = ?'''
         async with con.execute(query, (course_id, 'student')) as cursor:
             users_data = await cursor.fetchall()
@@ -216,7 +217,9 @@ async def get_data_user(user_id: int) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
         async with con.cursor() as cursor:
-            await cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+            await cursor.execute('''SELECT * FROM users u 
+                                    JOIN timezones t ON t.timezone_id = u.timezone_id
+                                    WHERE u.user_id = ?''', (user_id,))
             row = await cursor.fetchone()
             if row:
                 return dict(row)
@@ -680,4 +683,9 @@ async def delete_all_user_data(user_id: int) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         await con.execute("PRAGMA foreign_keys = ON;")
         await con.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
+        await con.commit()
+
+async def change_deadline(user_id: int, task_id: int, new_date: str) -> None:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        await con.execute('INSERT INTO changed_deadlines VALUES(?, ?, ?)', (user_id, task_id, new_date))
         await con.commit()

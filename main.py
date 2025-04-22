@@ -16,7 +16,7 @@ async def main() -> None:
     await db.create_course('Тестовый')
     course_id = await db.get_course_id('Тестовый')
     await db.add_users(['itimchuck'], course_id)
-    await db.add_users(['try_user'], course_id)
+    await db.add_users(['po1eena'], course_id)
     monitor_task = create_task(setup_monitoring())
     create_task(setup_google_polling_loop(google_client))
     task_id = await db.add_task('Задание 16', course_id, True,
