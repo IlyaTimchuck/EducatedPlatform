@@ -1,15 +1,13 @@
-from datetime import datetime
-
+from typing import Union
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
-from aiogram import Router, types
+from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
 from aiogram.exceptions import TelegramBadRequest
 from bot_instance import bot
 import state as st
 import database as db
 import keyboard as kb
-from callbacks.learning import completing_homework
 
 router = Router()
 
@@ -23,8 +21,17 @@ async def start(message: types.Message, state: FSMContext):
 
 
 @router.message(Command(commands=['command_menu']))
-async def command_menu(message: types.Message, state: FSMContext):
+@router.callback_query(F.data == "attempt_to_log_in")
+async def command_menu(update: Union[Message, CallbackQuery] , state: FSMContext):
     state_data = await state.get_data()
+    user_id = update.from_user.id
+    if isinstance(update, CallbackQuery):
+        data = await state.get_data()
+        await bot.delete_message(chat_id=user_id, message_id=state_data['block_message_id'])
+        state_data.pop('block_message_id')
+        await update.answer('Блокировка была снята!',
+                                    show_alert=True)
+
     message_menu_id = state_data.get('command_menu_id', None)
     message_abstract_id = state_data.get('message_abstract_id', None)
     session_start = state_data.get('session_start', None)
@@ -32,23 +39,22 @@ async def command_menu(message: types.Message, state: FSMContext):
     reminder_message_id = state_data.get('reminder_message_id', None)
     notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id', None)
     messages_getting_file_work = state_data.get('messages_getting_file_work')
-    print(state_data)
     if message_menu_id:
-        await bot.delete_message(chat_id=message.from_user.id, message_id=message_menu_id)
+        await bot.delete_message(chat_id=user_id, message_id=message_menu_id)
     if message_abstract_id:
-        await bot.delete_message(chat_id=message.from_user.id, message_id=message_abstract_id)
+        await bot.delete_message(chat_id=user_id, message_id=message_abstract_id)
     if reminder_message_id:
-        await bot.delete_message(chat_id=message.from_user.id, message_id=reminder_message_id)
+        await bot.delete_message(chat_id=user_id, message_id=reminder_message_id)
     if notification_about_new_task_message_id:
-        await bot.delete_message(chat_id=message.from_user.id, message_id=notification_about_new_task_message_id)
+        await bot.delete_message(chat_id=user_id, message_id=notification_about_new_task_message_id)
     if messages_getting_file_work:
         for message_id in messages_getting_file_work:
-            await bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+            await bot.delete_message(chat_id=user_id, message_id=message_id)
     elif session_start and not session_end:
-        await bot.delete_message(chat_id=message.from_user.id, message_id=state_data['homework_message_id'])
+        await bot.delete_message(chat_id=user_id, message_id=state_data['homework_message_id'])
 
-    text_message, keyboard = await kb.send_command_menu(message.from_user.id)
-    new_command_menu_id = await message.answer(text_message, reply_markup=keyboard)
+    text_message, keyboard = await kb.send_command_menu(user_id)
+    new_command_menu_id = await bot.send_message(text=text_message, chat_id= user_id, reply_markup=keyboard)
     await state.clear()
     await state.set_state(st.MappingExercise.mapping_command_menu)
     await state.update_data(command_menu_id=new_command_menu_id.message_id)

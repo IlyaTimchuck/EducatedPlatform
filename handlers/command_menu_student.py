@@ -6,7 +6,6 @@ from aiogram.types import CallbackQuery, InputMediaVideo
 import state as st
 import database as db
 import keyboard as kb
-from handlers.command import command_menu
 
 router = Router()
 
@@ -157,18 +156,3 @@ async def opening_list_exercises(callback_query: CallbackQuery, state: FSMContex
     await callback_query.message.edit_text(text='Выбери задание',
                                            reply_markup=await kb.mapping_list_exercises(state_data,
                                                                                         'results' in state_data))
-
-
-@router.callback_query(F.data == 'attempt_to_log_in')
-async def process_attempt_to_log_in(callback_query: CallbackQuery, state: FSMContext):
-    state_data = await state.get_data()
-    await bot.delete_message(chat_id=callback_query.from_user.id, message_id=state_data['block_message_id'])
-    await bot.delete_message(chat_id=callback_query.from_user.id, message_id=state_data['command_menu_id'])
-    state_data.pop('block_message_id')
-    state_data.pop('command_menu_id')
-    await state.set_data(state_data)
-    await callback_query.answer('Блокировка была снята!',
-                    show_alert=True)
-    await command_menu(callback_query.message, state)
-
-

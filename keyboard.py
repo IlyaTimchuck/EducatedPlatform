@@ -157,7 +157,6 @@ async def choose_course_reply():
 
 async def send_command_menu(user_id: int):
     user_data = await db.get_data_user(user_id)
-    print(user_id, user_data)
     if user_data['role'] == 'student':
         last_task = await db.get_last_task(user_id)
         callback_data_last_task = f'open_task:{last_task['course_id']}:{last_task['task_id']}:0' if last_task else 'ignore'

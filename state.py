@@ -25,3 +25,6 @@ class MappingExercise(StatesGroup):
     mapping_task = State()
     getting_work_file = State()
     solving_homework = State()
+
+class CommandMenu(StatesGroup):
+    command_menu_handlers = State()
