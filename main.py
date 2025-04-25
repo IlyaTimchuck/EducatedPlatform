@@ -6,11 +6,15 @@ from bot_instance import bot, dp
 from deadline import setup_monitoring
 from google_table import setup_google_polling_loop, google_client
 import database as db
+from lifes_limiter import LifeCheckMiddleware
+
 
 
 async def main() -> None:
     setup_routers(dp)
     setup_routers_callbacks(dp)
+    dp.message.middleware(LifeCheckMiddleware())
+    dp.callback_query.middleware(LifeCheckMiddleware())
     dp.include_router(command_menu_admin_router)
     await db.create_db()
     await db.create_course('Тестовый')

@@ -32,6 +32,7 @@ async def command_menu(message: types.Message, state: FSMContext):
     reminder_message_id = state_data.get('reminder_message_id', None)
     notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id', None)
     messages_getting_file_work = state_data.get('messages_getting_file_work')
+    print(state_data)
     if message_menu_id:
         await bot.delete_message(chat_id=message.from_user.id, message_id=message_menu_id)
     if message_abstract_id:

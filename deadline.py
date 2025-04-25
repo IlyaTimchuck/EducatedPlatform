@@ -19,7 +19,7 @@ async def check_deadlines(timezone_id: int):
     now = datetime.now(tz).strftime("%Y-%m-%d")
     progress_users = await db.get_due_tasks_for_timezone(timezone_id, now)
     if progress_users:
-        await db.update_deadlines_and_lives_bulk(progress_users, timezone_id)
+        await db.update_deadlines_and_lifes_bulk(progress_users, timezone_id)
     print('Проверка была выполнена')
 
 

@@ -1,15 +1,8 @@
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.base import StorageKey
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery
 from aiogram import Router, F
-from datetime import datetime
-from bot_instance import bot, dp
 from google_table import google_client
-
-import calendar
-import state as st
 import database as db
-import keyboard as kb
+
 
 router = Router()
 

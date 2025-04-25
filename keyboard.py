@@ -157,17 +157,18 @@ async def choose_course_reply():
 
 async def send_command_menu(user_id: int):
     user_data = await db.get_data_user(user_id)
+    print(user_id, user_data)
     if user_data['role'] == 'student':
         last_task = await db.get_last_task(user_id)
         callback_data_last_task = f'open_task:{last_task['course_id']}:{last_task['task_id']}:0' if last_task else 'ignore'
         command_menu = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
             [InlineKeyboardButton(text='Открыть последнее занятие', callback_data=callback_data_last_task)],
-            [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
+            [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lifes')],
         ])
-        lives = user_data['lives']
+        lifes = user_data['lifes']
         deadline_today = await db.get_today_deadline_for_keyboard(user_id)
-        text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
+        text_message = f'Текущее количество жизней: {lifes * '❤️'}\n'
         if deadline_today:
             text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}'
         else:
@@ -244,4 +245,9 @@ back_to_homework = InlineKeyboardMarkup(inline_keyboard=[
 confirm_completing_work_file = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Вернуться назад', callback_data='open_homework'),
      InlineKeyboardButton(text='Завершить', callback_data='complete_homework')]
+])
+
+
+block_button = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Попробовать еще раз', callback_data='attempt_to_log_in')]
 ])

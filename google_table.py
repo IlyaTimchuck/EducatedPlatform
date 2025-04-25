@@ -86,7 +86,7 @@ class GoogleSheetsClient:
             timezone: str,
             date_of_joining: str,
             role: str,
-            lives: int,
+            lifes: int,
     ) -> None:
         await self._ensure_authorized('add_user_in_table')
         worksheet = await self.spreadsheet.worksheet('users')
@@ -100,7 +100,7 @@ class GoogleSheetsClient:
             date_of_joining,
             role,
             status,
-            f'{lives}❤️',
+            f'{lifes}❤️',
             '-'
         ]
         await worksheet.append_row(row_data)
@@ -142,7 +142,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                 ws_users = await google_sheets_client.spreadsheet.worksheet('users')
                 raw_users = await ws_users.get_all_values()
                 headers_users, users_rows = raw_users[0], raw_users[1:]
-                lives_data = []
+                lifes_data = []
 
                 for row_idx, row in enumerate(users_rows, start=2):
                     row_dict = dict(zip(headers_users, row))
@@ -168,9 +168,9 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                             )
 
                         elif update_time != '-':
-                            lives_str = row_dict.get('Lives', '').strip()
-                            new_lives = int(lives_str[0]) if lives_str and lives_str[0].isdigit() else 0
-                            lives_data.append((user_id, new_lives))
+                            lifes_str = row_dict.get('lifes', '').strip()
+                            new_lifes = int(lifes_str[0]) if lifes_str and lifes_str[0].isdigit() else 0
+                            lifes_data.append((user_id, new_lifes))
                             upd_col = headers_users.index('Update_time') + 1
                             await ws_users.update_cell(row_idx, upd_col, '-')
 
@@ -202,10 +202,10 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                         logger.error(f"Parsing deadlines error row {row_idx}: {e}")
                         continue
 
-                if lives_data:
-                    logger.info(f"Updating lives: {lives_data}")
-                    for user_id, new_lives in lives_data:
-                        await db.update_lives_for_user(user_id, new_lives)
+                if lifes_data:
+                    logger.info(f"Updating lifes: {lifes_data}")
+                    for user_id, new_lifes in lifes_data:
+                        await db.update_lifes_for_user(user_id, new_lifes)
 
                 if deadlines_data:
                     logger.info(f"Updating deadlines: {deadlines_data}")
@@ -229,12 +229,3 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                 text=f"В мониторинге google_polling_loop произошла ошибка: {e}"
             )
             await asyncio.sleep(60)
-
-
-def _cell_name(row: int, col: int) -> str:
-    """Convert numeric row/col to A1 notation."""
-    letters = ''
-    while col:
-        col, rem = divmod(col - 1, 26)
-        letters = chr(65 + rem) + letters
-    return f"{letters}{row}"
