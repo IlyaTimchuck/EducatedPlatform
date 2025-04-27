@@ -17,11 +17,11 @@ logger.setLevel(logging.INFO)
 
 class GoogleSheetsClient:
     def __init__(
-            self,
-            creds_file: str,
-            spreadsheet_id: str,
-            max_retries: int = 2,
-            notify_chat_id: int = 795508218,
+        self,
+        creds_file: str,
+        spreadsheet_id: str,
+        max_retries: int = 2,
+        notify_chat_id: int = 795508218,
     ) -> None:
         self._agcm = None
         self.spreadsheet = None
@@ -50,13 +50,13 @@ class GoogleSheetsClient:
                 await asyncio.sleep(1)
         self.spreadsheet = None
 
-    async def _ensure_authorized(self, function_name: str) -> None:
+    async def _ensure_authorized(self, fn_name: str) -> None:
         if self.spreadsheet is None:
             await self._reinitialize()
         if self.spreadsheet is None:
             await bot.send_message(
                 chat_id=self.notify_chat_id,
-                text=f"Authorization error in {function_name}",
+                text=f"Authorization error in {fn_name}",
             )
 
     async def _init_drive_service(self):
@@ -73,25 +73,24 @@ class GoogleSheetsClient:
 
     async def get_exercise(self) -> list[str]:
         await self._ensure_authorized('get_exercise')
-        worksheet = await self.spreadsheet.get_worksheet(0)
-        data = await worksheet.get_all_values()
+        ws = await self.spreadsheet.get_worksheet(0)
+        data = await ws.get_all_values()
         return data[1:]
 
     async def add_user_in_table(
-            self,
-            real_name: str,
-            telegram_username: str,
-            course_title: str,
-            user_id: int,
-            timezone: str,
-            date_of_joining: str,
-            role: str,
-            lifes: int,
+        self,
+        real_name: str,
+        telegram_username: str,
+        course_title: str,
+        user_id: int,
+        timezone: str,
+        date_of_joining: str,
+        role: str,
+        lifes: int,
     ) -> None:
         await self._ensure_authorized('add_user_in_table')
-        worksheet = await self.spreadsheet.worksheet('users')
-        status = 'active'
-        row_data = [
+        ws = await self.spreadsheet.worksheet('users')
+        row = [
             real_name,
             telegram_username,
             course_title,
@@ -99,126 +98,128 @@ class GoogleSheetsClient:
             timezone,
             date_of_joining,
             role,
-            status,
+            'active',
             f'{lifes}❤️',
-            '-'
+            '-',
         ]
-        await worksheet.append_row(row_data)
+        await ws.append_row(row)
 
     async def add_deadlines_in_table(self, data: list[list]) -> None:
         await self._ensure_authorized('add_deadlines_in_table')
-        worksheet = await self.spreadsheet.worksheet('deadlines')
-        await worksheet.append_rows(data)
+        ws = await self.spreadsheet.worksheet('deadlines')
+        await ws.append_rows(data)
 
     async def check_for_updates(self) -> bool:
         await self._ensure_authorized('check_for_updates')
-        drive_service = await self._init_drive_service()
-
+        drive = await self._init_drive_service()
         metadata = await asyncio.to_thread(
-            lambda: drive_service.files()
+            lambda: drive.files()
             .get(fileId=self.spreadsheet_id, fields='modifiedTime')
             .execute()
         )
-        modified_time = metadata.get('modifiedTime')
-        logger.debug(f"Fetched modifiedTime: {modified_time}")
-
-        if self._last_modified_time is None or modified_time != self._last_modified_time:
-            self._last_modified_time = modified_time
+        modified = metadata.get('modifiedTime')
+        logger.debug(f"Fetched modifiedTime: {modified}")
+        if self._last_modified_time is None or modified != self._last_modified_time:
+            self._last_modified_time = modified
             return True
         return False
 
-google_client = GoogleSheetsClient(creds_file='educatedplatform-a40aded26c1c.json',
-                                   spreadsheet_id='1dRVN0o5TVgZ7zfcPZOej8VCq508xeWfNhPLexWTINWE')
-
-
 
 async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) -> None:
+    # Первичная установка флага, чтобы не считать первое чтение "обновлением"
     await google_sheets_client.check_for_updates()
+
     while True:
         try:
             if await google_sheets_client.check_for_updates():
-                logger.info("Произошло обновление таблицы")
+                logger.info("Detected update in Google Sheet")
 
+                # --- ОБРАБОТКА ПОЛЬЗОВАТЕЛЕЙ ---
                 ws_users = await google_sheets_client.spreadsheet.worksheet('users')
                 raw_users = await ws_users.get_all_values()
                 headers_users, users_rows = raw_users[0], raw_users[1:]
-                lifes_data = []
+                # нормализуем: всё в нижний регистр, без пробелов
+                normalized_users = [h.strip().lower() for h in headers_users]
 
-                for row_idx, row in enumerate(users_rows, start=2):
-                    row_dict = dict(zip(headers_users, row))
+                for i, row in enumerate(users_rows, start=2):
+                    row_dict = dict(zip(normalized_users, row))
                     try:
-                        status = row_dict.get('Status', '').strip().lower()
-                        update_time = row_dict.get('Update_time', '-').strip()
-                        uid_str = row_dict.get('User_id', '').strip()
+                        status = row_dict.get('status', '').strip().lower()
+                        update_time = row_dict.get('update_time', '-').strip()
+                        uid = int(row_dict.get('user_id', '0'))
 
-                        if not uid_str.isdigit():
-                            raise ValueError("Invalid User_id")
-                        user_id = int(uid_str)
-
+                        # 1) удаление пользователя
                         if status == 'deactivate':
-                            username = row_dict.get('Telegram_username')
-                            await ws_users.delete_rows(row_idx)
+                            username = row_dict.get('telegram_username', '')
+                            await ws_users.delete_rows(i)
                             await bot.send_message(
                                 chat_id=google_sheets_client.notify_chat_id,
                                 text=(
-                                    f"Вы действительно хотите удалить пользователя "
-                                    f"@{username} и все связанные с ним данные?"
+                                    f"Вы действительно хотите удалить пользователя @{username} "
+                                    f"и все его данные?"
                                 ),
-                                reply_markup=await kb.confirm_deleting_user(user_id)
+                                reply_markup=await kb.confirm_deleting_user(uid)
                             )
 
+                        # 2) изменение жизней
                         elif update_time != '-':
-                            lifes_str = row_dict.get('lifes', '').strip()
+                            # читаем новое кол-во жизней
+                            lifes_str = row_dict.get('lifes', '0').strip()
                             new_lifes = int(lifes_str[0]) if lifes_str and lifes_str[0].isdigit() else 0
-                            lifes_data.append((user_id, new_lifes))
-                            upd_col = headers_users.index('Update_time') + 1
-                            await ws_users.update_cell(row_idx, upd_col, '-')
+
+                            # обновляем БД
+                            logger.info(f"Updating lifes for user {uid}: {new_lifes}")
+                            await db.update_lifes_for_user(uid, new_lifes)
+
+                            # пишем обратно в лист актуальное значение
+                            col_lifes = normalized_users.index('lifes') + 1
+                            await ws_users.update_cell(i, col_lifes, f'{new_lifes}❤️')
+
+                            # сбрасываем флаг Update_time
+                            col_upd = normalized_users.index('update_time') + 1
+                            await ws_users.update_cell(i, col_upd, '-')
 
                     except Exception as e:
-                        logger.error(f"Parsing users error row {row_idx}: {e}")
+                        logger.error(f"Error processing users row {i}: {e}")
                         continue
 
+                # --- ОБРАБОТКА ДЕДЛАЙНОВ ---
                 ws_dead = await google_sheets_client.spreadsheet.worksheet('deadlines')
                 raw_dead = await ws_dead.get_all_values()
                 headers_dead, dead_rows = raw_dead[0], raw_dead[1:]
-                deadlines_data = []
+                normalized_dead = [h.strip().lower() for h in headers_dead]
 
-                for row_idx, row in enumerate(dead_rows, start=2):
-                    row_dict = dict(zip(headers_dead, row))
+                for j, row in enumerate(dead_rows, start=2):
+                    row_dict = dict(zip(normalized_dead, row))
                     try:
-                        update_time = row_dict.get('Update_time', '-').strip()
-                        uid_str = row_dict.get('User_id', '').strip()
-                        tid_str = row_dict.get('Task_id', '').strip()
+                        update_time = row_dict.get('update_time', '-').strip()
+                        uid_str = row_dict.get('user_id', '').strip()
+                        tid_str = row_dict.get('task_id', '').strip()
 
                         if update_time != '-' and uid_str.isdigit() and tid_str.isdigit():
-                            user_id = int(uid_str)
-                            task_id = int(tid_str)
-                            deadline = row_dict.get('Deadline', '').strip()
-                            deadlines_data.append((user_id, task_id, deadline))
-                            upd_col = headers_dead.index('Update_time') + 1
-                            await ws_dead.update_cell(row_idx, upd_col, '-')
+                            uid = int(uid_str)
+                            tid = int(tid_str)
+                            deadline = row_dict.get('deadline', '').strip()
+
+                            logger.info(f"Updating deadline for {uid}, task {tid}: {deadline}")
+                            await db.change_deadline(uid, tid, deadline)
+
+                            # сбрасываем флаг Update_time
+                            col_upd = normalized_dead.index('update_time') + 1
+                            await ws_dead.update_cell(j, col_upd, '-')
 
                     except Exception as e:
-                        logger.error(f"Parsing deadlines error row {row_idx}: {e}")
+                        logger.error(f"Error processing deadlines row {j}: {e}")
                         continue
 
-                if lifes_data:
-                    logger.info(f"Updating lifes: {lifes_data}")
-                    for user_id, new_lifes in lifes_data:
-                        await db.update_lifes_for_user(user_id, new_lifes)
-
-                if deadlines_data:
-                    logger.info(f"Updating deadlines: {deadlines_data}")
-                    for user_id, task_id, deadline in deadlines_data:
-                        await db.change_deadline(user_id, task_id, deadline)
-
+            # пауза перед следующим циклом
             await asyncio.sleep(60 + random.randint(0, 5))
 
         except HttpError as http_err:
             logger.exception("Google API HttpError")
             await bot.send_message(
                 chat_id=google_sheets_client.notify_chat_id,
-                text=f"Ошибка Google API: {http_err}"
+                text=f"Google API error: {http_err}"
             )
             await asyncio.sleep(60)
 
@@ -226,6 +227,13 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
             logger.exception("Unhandled error in polling loop")
             await bot.send_message(
                 chat_id=google_sheets_client.notify_chat_id,
-                text=f"В мониторинге google_polling_loop произошла ошибка: {e}"
+                text=f"Error in google_polling_loop: {e}"
             )
             await asyncio.sleep(60)
+
+
+# создаём клиента и запускаем цикл где-нибудь в main.py
+google_client = GoogleSheetsClient(
+    creds_file='educatedplatform-a40aded26c1c.json',
+    spreadsheet_id='1dRVN0o5TVgZ7zfcPZOej8VCq508xeWfNhPLexWTINWE'
+)

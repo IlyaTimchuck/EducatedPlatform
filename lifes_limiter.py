@@ -27,13 +27,15 @@ class LifeCheckMiddleware(BaseMiddleware):
                 )
             else:
                 state: FSMContext = data.get("state")
-                sd = await state.get_data() if state else {}
+                state_data = await state.get_data() if state else {}
                 # Message
-                if not sd.get("blocked_shown"):
+                if not state_data.get("blocked_shown"):
+                    block_message_user = state_data.get('block_messages_user', [])
+                    block_message_user.append(event.message_id)
                     block_message = await event.answer(
                         "❌ У вас закончились жизни. Доступ к курсу заблокирован. Обратитесь к администратору.",
                         reply_markup=kb.block_button)
-                    await state.update_data(blocked_shown=True, block_message_id=block_message.message_id)
+                    await state.update_data(blocked_shown=True, block_message_id=block_message.message_id, block_messages_user=block_message_user)
             return
 
         return await handler(event, data)
