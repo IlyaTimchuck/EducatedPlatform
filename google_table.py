@@ -6,6 +6,7 @@ from google.oauth2.service_account import Credentials
 import gspread_asyncio
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from gspread.utils import rowcol_to_a1
 
 from bot_instance import bot
 import database as db
@@ -17,11 +18,11 @@ logger.setLevel(logging.INFO)
 
 class GoogleSheetsClient:
     def __init__(
-        self,
-        creds_file: str,
-        spreadsheet_id: str,
-        max_retries: int = 2,
-        notify_chat_id: int = 795508218,
+            self,
+            creds_file: str,
+            spreadsheet_id: str,
+            max_retries: int = 2,
+            notify_chat_id: int = 795508218,
     ) -> None:
         self._agcm = None
         self.spreadsheet = None
@@ -77,31 +78,13 @@ class GoogleSheetsClient:
         data = await ws.get_all_values()
         return data[1:]
 
-    async def add_user_in_table(
-        self,
-        real_name: str,
-        telegram_username: str,
-        course_title: str,
-        user_id: int,
-        timezone: str,
-        date_of_joining: str,
-        role: str,
-        lifes: int,
-    ) -> None:
+    async def add_user_in_table(self, real_name: str, telegram_username: str, course_title: str, user_id: int,
+                                timezone: str, date_of_joining: str, role: str, lives: int,
+                                ) -> None:
         await self._ensure_authorized('add_user_in_table')
         ws = await self.spreadsheet.worksheet('users')
-        row = [
-            real_name,
-            telegram_username,
-            course_title,
-            str(user_id),
-            timezone,
-            date_of_joining,
-            role,
-            'active',
-            f'{lifes}❤️',
-            '-',
-        ]
+        row = [real_name, telegram_username, course_title, str(user_id), timezone, date_of_joining,
+               role, 'active', f'{lives}❤️', '-', ]
         await ws.append_row(row)
 
     async def add_deadlines_in_table(self, data: list[list]) -> None:
@@ -123,6 +106,41 @@ class GoogleSheetsClient:
             self._last_modified_time = modified
             return True
         return False
+
+    async def batch_set_lives_for_users(self, updates: list[tuple[int, int]]) -> None:
+        await self._ensure_authorized('batch_set_lives_for_users')
+
+        worksheet = await self.spreadsheet.worksheet('users')
+        all_values = await worksheet.get_all_values()
+
+        headers = [h.strip().lower() for h in all_values[0]]
+        col_user_id = headers.index('user_id') + 1
+        col_lives = headers.index('lives') + 1
+
+        # строим маппинг "user_id" → номер строки
+        id_to_row = {
+            row[col_user_id - 1]: idx
+            for idx, row in enumerate(all_values[1:], start=2)
+        }
+
+        batch_data = []
+        for user_id, new_lives in updates:
+            row_num = id_to_row.get(str(user_id))
+            if not row_num:
+                continue
+            # rowcol_to_a1 возвращает, например, 'I3'
+            cell_a1 = rowcol_to_a1(row_num, col_lives)
+            batch_data.append({
+                'range': cell_a1,  # ← без имени листа
+                'values': [[f'{new_lives}❤️']],
+            })
+
+        if batch_data:
+            # Первый аргумент — ваш список data, второй — опция
+            await worksheet.batch_update(
+                batch_data,
+                value_input_option='USER_ENTERED'
+            )
 
 
 async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) -> None:
@@ -164,16 +182,16 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                         # 2) изменение жизней
                         elif update_time != '-':
                             # читаем новое кол-во жизней
-                            lifes_str = row_dict.get('lifes', '0').strip()
-                            new_lifes = int(lifes_str[0]) if lifes_str and lifes_str[0].isdigit() else 0
+                            lives_str = row_dict.get('lives', '0').strip()
+                            new_lives = int(lives_str[0]) if lives_str and lives_str[0].isdigit() else 0
 
                             # обновляем БД
-                            logger.info(f"Updating lifes for user {uid}: {new_lifes}")
-                            await db.update_lifes_for_user(uid, new_lifes)
+                            logger.info(f"Updating lives for user {uid}: {new_lives}")
+                            await db.update_lives_for_user(uid, new_lives)
 
                             # пишем обратно в лист актуальное значение
-                            col_lifes = normalized_users.index('lifes') + 1
-                            await ws_users.update_cell(i, col_lifes, f'{new_lifes}❤️')
+                            col_lives = normalized_users.index('lives') + 1
+                            await ws_users.update_cell(i, col_lives, f'{new_lives}❤️')
 
                             # сбрасываем флаг Update_time
                             col_upd = normalized_users.index('update_time') + 1

@@ -38,5 +38,5 @@ async def record_answer(message: Message, state: FSMContext):
         chat_id=message.chat.id,
         message_id=message_id,
         text=text_message,
-        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, file_work)
+        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, file_work, admin_connection=False)
     )

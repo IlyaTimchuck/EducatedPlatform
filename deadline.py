@@ -5,12 +5,16 @@ import pytz
 from aiogram.fsm.context import FSMContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from aiogram.types import Message
 from bot_instance import bot, dp
 from aiogram.fsm.storage.base import StorageKey
+from google_table import google_client
+import logging
 
 import database as db
 import keyboard as kb
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 async def check_deadlines(timezone_id: int):
@@ -19,8 +23,9 @@ async def check_deadlines(timezone_id: int):
     now = datetime.now(tz).strftime("%Y-%m-%d")
     progress_users = await db.get_due_tasks_for_timezone(timezone_id, now)
     if progress_users:
-        await db.update_deadlines_and_lifes_bulk(progress_users, timezone_id)
-    print('Проверка была выполнена')
+        updates = await db.update_deadlines_and_lives_bulk(progress_users, timezone_id)
+        await google_client.batch_set_lives_for_users(updates)
+    logger.info('Проверка была выполнена, жизни в таблице обновлены')
 
 
 async def send_deadline_reminder(timezone_id):
@@ -29,21 +34,20 @@ async def send_deadline_reminder(timezone_id):
         for deadline_data in deadline_today:
             text_message = f"Привет! Напоминаю, что сегодня в 0:00 дедлайн\nНазвание урока: {deadline_data['task_title']}"
             reminder_message = await bot.send_message(deadline_data['user_id'], text_message,
-                                                         reply_markup=await kb.start_the_task_from_the_reminder(
-                                                             deadline_data['course_id'],
-                                                             deadline_data['task_id']))
+                                                      reply_markup=await kb.start_the_task_from_the_reminder(
+                                                          deadline_data['course_id'],
+                                                          deadline_data['task_id']))
             storage_key = StorageKey(bot_id=bot.id, chat_id=deadline_data['user_id'], user_id=deadline_data['user_id'])
             state = FSMContext(storage=dp.storage, key=storage_key)
             await state.update_data(reminder_message_id=reminder_message.message_id)
-    print('Напоминания разосланы')
+    logger.info('Напоминания разосланы')
 
 
 async def update_jobs(scheduler):
     """Функция для обновления расписания задач для всех часовых поясов."""
     timezones = await db.get_timezones()
 
-    print("Updating timezone jobs for:", timezones)
-
+    logger.info(f"Updating timezone jobs for: {timezones}")
     for job in scheduler.get_jobs():
         if job.id.startswith("task_") or job.id.startswith("reminder_"):
             scheduler.remove_job(job.id)
@@ -52,19 +56,19 @@ async def update_jobs(scheduler):
         tz_value = timezones[timezone_id]
         scheduler.add_job(
             check_deadlines,
-            trigger=CronTrigger(hour=3, minute=11, timezone=tz_value),
+            trigger=CronTrigger(hour=5, minute=36, timezone=tz_value),
             args=[timezone_id],
             id=f"task_{timezone_id}"
         )
 
         scheduler.add_job(
             send_deadline_reminder,
-            trigger=CronTrigger(hour=1, minute=59, timezone=tz_value),
+            trigger=CronTrigger(hour=5, minute=13, timezone=tz_value),
             args=[timezone_id],
             id=f"reminder_{timezone_id}"
         )
 
-    print("Timezone jobs updated.")
+    logger.info("Timezone jobs updated.")
 
 
 async def setup_monitoring():
@@ -75,7 +79,7 @@ async def setup_monitoring():
 
     scheduler.add_job(
         update_jobs,
-        trigger=CronTrigger(hour=1, minute=58, timezone="Europe/Moscow"),
+        trigger=CronTrigger(hour=5, minute=54, timezone="Europe/Moscow"),
         args=[scheduler],
         id="global_update"
     )

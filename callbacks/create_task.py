@@ -25,15 +25,14 @@ async def process_add_users(callback_query: CallbackQuery, state: FSMContext):
 async def process_add_lesson(callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.edit_text(f'Для добавления домашнего задания выбери курс',
-                                           reply_markup=await kb.choose_course_inline())
+                                           reply_markup=await kb.choose_course_inline(for_add_task=True))
 
 
-@router.callback_query(lambda c: c.data.startswith('choose_course'))
+@router.callback_query(lambda c: c.data.startswith('course_selection_for_task_creation'))
 async def process_increase_block(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     await state.set_state(st.AddTask.choose_course)
-    course_name = callback_query.data.split(":")[-1]
-    course_id = await db.get_course_id(course_name)
+    course_id = int(callback_query.data.split(":")[-1])
     current_block = await db.get_blocks(course_id, current=True)
     await state.update_data(course_id=course_id, current_block=current_block)
     await callback_query.message.edit_text(
@@ -71,7 +70,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
                 reply_markup=kb.confirm_new_block_keyboard)
     new_text = f'Выбери блок\n\nТекущий выбор: {selected_block} блок'
     if callback_query.message.text != new_text:
-        await callback_query.message.edit_text(text=f'Выбери блок\n\nТекущий выбор: {selected_block} блок',
+        await callback_query.message.edit_text(text=new_text,
                                                reply_markup=await kb.to_change_block(selected_block))
 
 
@@ -87,7 +86,7 @@ async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
         year = datetime.now().year
         month = datetime.now().month
         block_id = await db.create_block(state_data['course_id'], state_data['selected_block'])
-        await db.update_lifes_with_new_block(state_data['course_id'])
+        await db.update_lives_with_new_block(state_data['course_id'])
         await state.update_data(block_id=block_id)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',

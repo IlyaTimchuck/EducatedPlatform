@@ -2,11 +2,12 @@ from asyncio import run, create_task, CancelledError
 from handlers.__init__ import setup_routers
 from callbacks.__init__ import setup_routers_callbacks
 from command_menu_admin import router as command_menu_admin_router
+from command_menu_student import router as student_menu_router
 from bot_instance import bot, dp
 from deadline import setup_monitoring
 from google_table import setup_google_polling_loop, google_client
 import database as db
-from lifes_limiter import LifeCheckMiddleware
+from lives_limiter import LifeCheckMiddleware
 
 
 
@@ -16,6 +17,7 @@ async def main() -> None:
     dp.message.middleware(LifeCheckMiddleware())
     dp.callback_query.middleware(LifeCheckMiddleware())
     dp.include_router(command_menu_admin_router)
+    dp.include_router(student_menu_router)
     await db.create_db()
     await db.create_course('Тестовый')
     course_id = await db.get_course_id('Тестовый')
@@ -23,11 +25,11 @@ async def main() -> None:
     await db.add_users(['po1eena'], course_id)
     monitor_task = create_task(setup_monitoring())
     create_task(setup_google_polling_loop(google_client))
-    task_id = await db.add_task('Задание 16', course_id, True,
+    task_id = await db.add_task('Задание 16', course_id, False,
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
-                                'https://drive.google.com/drive/folders/1IlsIZjIGWKO1ZfeRLxScOu0W58DFwaF0?usp=drive_link',
-                                '2025-03-31')
+                                None,
+                                '2025-04-29')
     await db.add_exercise(task_id,
                           'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',
                           '12')

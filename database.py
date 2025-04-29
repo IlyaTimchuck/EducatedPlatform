@@ -12,17 +12,17 @@ def current_datetime():
 
 async def create_db() -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
-        await con.execute("DROP TABLE IF EXISTS unregistered")
-        await con.execute("DROP TABLE IF EXISTS users")
+        # await con.execute("DROP TABLE IF EXISTS unregistered")
+        # await con.execute("DROP TABLE IF EXISTS users")
         await con.execute("DROP TABLE IF EXISTS courses")
         await con.execute("DROP TABLE IF EXISTS blocks")
         await con.execute("DROP TABLE IF EXISTS tasks")
         await con.execute("DROP TABLE IF EXISTS exercises")
-        await con.execute("DROP TABLE IF EXISTS learning_progress")
-        await con.execute("DROP TABLE IF EXISTS sessions")
-        await con.execute("DROP TABLE IF EXISTS changed_deadlines")
-        await con.execute("DROP TABLE IF EXISTS timezones")
-        await con.execute("DROP TABLE IF EXISTS history_of_lifes")
+        # await con.execute("DROP TABLE IF EXISTS learning_progress")
+        # await con.execute("DROP TABLE IF EXISTS sessions")
+        # await con.execute("DROP TABLE IF EXISTS changed_deadlines")
+        # await con.execute("DROP TABLE IF EXISTS timezones")
+        # await con.execute("DROP TABLE IF EXISTS history_of_lives")
 
         await con.execute("PRAGMA foreign_keys = ON;")
 
@@ -41,7 +41,7 @@ async def create_db() -> None:
                     course_id INTEGER,
                     timezone_id INTEGER,
                     date_of_joining TEXT,
-                    lifes INTEGER,
+                    lives INTEGER,
                     role TEXT,
                     FOREIGN KEY(course_id) REFERENCES courses(course_id),
                     FOREIGN KEY(timezone_id) REFERENCES timezones(timezone_id)
@@ -103,10 +103,10 @@ async def create_db() -> None:
                     FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
                     FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
                 )""")
-        await con.execute("""CREATE TABLE IF NOT EXISTS history_of_lifes (
+        await con.execute("""CREATE TABLE IF NOT EXISTS history_of_lives (
                     user_id INTEGER,
                     task_id INTEGER,
-                    lifes_after_action INTEGER,
+                    lives_after_action INTEGER,
                     action TEXT,
                     FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
                     FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
@@ -184,7 +184,7 @@ async def registration_user(real_name: str, telegram_username: str, user_id: int
 
         timezone_id = tz_record[0]
         date_of_joining = current_datetime()
-        lifes = 3
+        lives = 3
         cursor = await con.execute('''SELECT c.course_id, c.course_title
                     FROM unregistered un
                     JOIN courses c ON c.course_id = un.course_id
@@ -193,8 +193,8 @@ async def registration_user(real_name: str, telegram_username: str, user_id: int
         if course_data:
             await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                               (real_name, telegram_username, user_id, course_data[0], timezone_id, date_of_joining,
-                               lifes, role))
-            await con.execute('INSERT INTO history_of_lifes VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
+                               lives, role))
+            await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
             await con.execute('DELETE FROM unregistered WHERE telegram_username = ?', (telegram_username,))
             await con.commit()
         return course_data
@@ -213,11 +213,11 @@ async def get_users_by_course(course_id: int) -> list:
             return [dict(row) for row in users_data] if users_data else []
 
 
-async def get_lifes_user(user_id: int) -> int:
+async def get_lives_user(user_id: int) -> int:
     async with aiosqlite.connect('educated_platform.db') as con:
-        cursor = await con.execute('SELECT lifes FROM users WHERE user_id = ?', (user_id,))
-        lifes = await cursor.fetchone()
-        return int(lifes[0]) if lifes else 0
+        cursor = await con.execute('SELECT lives FROM users WHERE user_id = ?', (user_id,))
+        lives = await cursor.fetchone()
+        return int(lives[0]) if lives else 0
 
 
 async def get_data_user(user_id: int) -> dict:
@@ -325,9 +325,8 @@ async def get_list_exercises(task_id: int) -> dict:
 async def get_list_tasks(block_id: int) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
-        async with con.cursor() as cursor:
-            cursor = await con.execute('SELECT task_title, task_id FROM tasks WHERE block_id=?',
-                                       (block_id,))
+        query = 'SELECT task_title, task_id FROM tasks WHERE block_id=?'
+        async with con.execute(query, (block_id,)) as cursor:
             row = await cursor.fetchall()
             if row:
                 return dict(row)
@@ -493,13 +492,14 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
         query = """SELECT
                 u.user_id,
                 t.task_id,
-                u.lifes
+                u.lives
             FROM tasks t
             JOIN blocks b ON b.block_id = t.block_id
             JOIN users u ON u.course_id = b.course_id
             LEFT JOIN changed_deadlines cd ON cd.task_id = t.task_id AND cd.user_id = u.user_id
             LEFT JOIN sessions s ON s.task_id = t.task_id AND s.user_id = u.user_id
             WHERE u.timezone_id = ?
+              AND u.role = 'student'
               AND COALESCE(cd.deadline, t.deadline) = ?
             GROUP BY u.user_id, t.task_id
             HAVING MAX(s.is_completed) IS NULL OR MAX(s.is_completed) = 0
@@ -510,7 +510,7 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
             return [dict(row) for row in rows] if rows else []
 
 
-async def update_deadlines_and_lifes_bulk(updates: list, timezone_id: int) -> None:
+async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
         # Получаем значение timezone из timezones
         async with con.execute("SELECT timezone FROM timezones WHERE timezone_id = ?", (timezone_id,)) as cur:
@@ -520,7 +520,7 @@ async def update_deadlines_and_lifes_bulk(updates: list, timezone_id: int) -> No
             tz_value = str(row[0])
 
         # Вычисляем новый дедлайн как завтрашнюю дату с учетом timezone
-        new_deadline = (datetime.now(tz=ZoneInfo(tz_value)) + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+        new_deadline = (datetime.now(tz=ZoneInfo(tz_value)) + timedelta(days=1)).strftime("%Y-%m-%d")
 
         await con.execute("BEGIN TRANSACTION")
         try:
@@ -544,30 +544,32 @@ async def update_deadlines_and_lifes_bulk(updates: list, timezone_id: int) -> No
             # Обновляем жизни для каждого пользователя
             await con.executemany(
                 """UPDATE users 
-                   SET lifes = MAX(lifes - ?, 0)
+                   SET lives = MAX(lives - ?, 0)
                    WHERE user_id = ?""",
                 [(count, user_id) for user_id, count in user_counts.items()]
             )
 
             # Готовим записи для истории списаний.
-            # Предполагаем, что в updates для каждого пользователя поле "lifes" содержит текущее значение до списания.
+            # Предполагаем, что в updates для каждого пользователя поле "lives" содержит текущее значение до списания.
             history_records = []
             for u in updates:
                 # Если один пользователь появляется несколько раз, мы будем добавлять несколько записей.
-                new_lifes = u["lifes"] - user_counts[u["user_id"]]
-                history_records.append((u["user_id"], u["task_id"], new_lifes, '-1'))
+                new_lives = u["lives"] - user_counts[u["user_id"]]
+                history_records.append((u["user_id"], u["task_id"], new_lives, '-1'))
 
-            # Выполняем пакетную вставку в history_of_lifes
+            # Выполняем пакетную вставку в history_of_lives
             await con.executemany(
-                "INSERT INTO history_of_lifes VALUES (?, ?, ?, ?)",
+                "INSERT INTO history_of_lives VALUES (?, ?, ?, ?)",
                 history_records
             )
-
             await con.commit()
+            return [(record[0], record[2]) for record in history_records]
 
         except Exception as e:
             await con.rollback()
             raise e
+
+
 
 
 async def get_today_deadline_for_remind(timezone_id: int) -> list:
@@ -589,31 +591,53 @@ async def get_today_deadline_for_remind(timezone_id: int) -> list:
 
 async def get_today_deadline_for_keyboard(user_id: int):
     async with aiosqlite.connect('educated_platform.db') as con:
-        # Получаем часовой пояс пользователя
-        timezone_name_cursor = await con.execute(
-            '''SELECT timezone 
-               FROM timezones t
-               JOIN users u ON t.timezone_id = u.timezone_id
-               WHERE u.user_id = ?''', (user_id,)
-        )
-        timezone_tuple = await timezone_name_cursor.fetchone()
-        if not timezone_tuple:
-            raise ValueError("Часовой пояс не найден для пользователя")
-        tz_name = timezone_tuple[0]
-        tz = pytz.timezone(tz_name)
-        now = datetime.now(tz)
-
-        tomorrow_str = (now + timedelta(days=1)).strftime("%Y-%m-%d")
-
-        query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id
-                   FROM tasks t
-                   JOIN blocks b ON t.block_id = b.block_id
-                   JOIN users u ON b.course_id = u.course_id
-                   WHERE t.deadline = ?'''
+        # Чтобы получить Row как dict
         con.row_factory = aiosqlite.Row
-        async with con.execute(query, (tomorrow_str,)) as cursor:
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows] if rows else []
+
+        # 1) Узнаём timezone пользователя
+        async with con.execute(
+            """
+            SELECT t.timezone
+              FROM timezones t
+              JOIN users u ON t.timezone_id = u.timezone_id
+             WHERE u.user_id = ?
+            """,
+            (user_id,)
+        ) as cur_tz:
+            tz_row = await cur_tz.fetchone()
+
+        if not tz_row:
+            return []
+
+        tz = pytz.timezone(tz_row['timezone'])
+        now = datetime.now(tz)
+        tomorrow_str = (now + timedelta(days=1)).strftime('%Y-%m-%d')
+
+        # 2) Основной запрос — два плейсхолдера: user_id и дата
+        query = """
+            SELECT
+                u.user_id,
+                u.course_id,
+                t.task_id,
+                t.task_title,
+                b.block_id
+            FROM tasks t
+            JOIN blocks b
+              ON t.block_id = b.block_id
+            JOIN users u
+              ON b.course_id = u.course_id
+            LEFT JOIN changed_deadlines cd
+              ON cd.task_id = t.task_id
+             AND cd.user_id = u.user_id
+            WHERE u.user_id = ?
+              AND COALESCE(cd.deadline, t.deadline) = ?
+        """
+
+        async with con.execute(query, (user_id, tomorrow_str)) as cur_tasks:
+            rows = await cur_tasks.fetchall()
+
+        # Возвращаем список dict-ов (или пустой список)
+        return [dict(r) for r in rows] if rows else []
 
 
 async def get_today_new_block() -> list:
@@ -624,23 +648,23 @@ async def get_today_new_block() -> list:
         return [row[0] for row in rows] if rows else []
 
 
-async def update_lifes_with_new_block(course_id):
+async def update_lives_with_new_block(course_id):
     async with aiosqlite.connect('educated_platform.db') as con:
-        await con.execute('UPDATE users SET lifes = ? WHERE course_id = ? AND lifes != ?', (3, course_id, 0))
+        await con.execute('UPDATE users SET lives = ? WHERE course_id = ? AND lives != ?', (3, course_id, 0))
         await con.execute('''
-                   DELETE FROM history_of_lifes
+                   DELETE FROM history_of_lives
                    WHERE user_id IN (
                        SELECT user_id FROM users WHERE course_id = ?
                    )''', (course_id,))
-        await con.execute('INSERT INTO history_of_lifes VALUES(?, ?, ?, ?)', ('all_users', None, 3, '+3'))
+        await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', ('all_users', None, 3, '+3'))
         await con.commit()
 
 
-async def get_history_lifes_user(user_id: int) -> list:
+async def get_history_lives_user(user_id: int) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
-        query = '''SELECT h.lifes_after_action, h.action, t.task_title
-                   FROM history_of_lifes h
+        query = '''SELECT h.lives_after_action, h.action, t.task_title
+                   FROM history_of_lives h
                    LEFT JOIN tasks t ON t.task_id = h.task_id
                    WHERE h.user_id = ? OR h.user_id = ?'''
         async with con.execute(query, (user_id, 'all_users')) as cursor:
@@ -651,7 +675,7 @@ async def get_history_lifes_user(user_id: int) -> list:
 async def get_last_task(user_id):
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
-        query = '''SELECT u.course_id, t.task_id
+        query = '''SELECT u.course_id, t.block_id, t.task_id
                    FROM users u
                    JOIN blocks b ON u.course_id = b.course_id
                    JOIN tasks t ON b.block_id = t.block_id
@@ -663,19 +687,19 @@ async def get_last_task(user_id):
             return dict(last_task) if last_task else {}
 
 
-async def update_lifes_for_user(user_id: int, new_count_lifes: int) -> None:
+async def update_lives_for_user(user_id: int, new_count_lives: int) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
-        cursor = await con.execute('SELECT lifes FROM users WHERE user_id = ?', (user_id,))
-        old_count_lifes = (await cursor.fetchone())[0]
-        await con.execute('UPDATE users SET lifes = ? WHERE user_id = ?', (new_count_lifes, user_id))
-        if old_count_lifes > new_count_lifes:
+        cursor = await con.execute('SELECT lives FROM users WHERE user_id = ?', (user_id,))
+        old_count_lives = (await cursor.fetchone())[0]
+        await con.execute('UPDATE users SET lives = ? WHERE user_id = ?', (new_count_lives, user_id))
+        if old_count_lives > new_count_lives:
             change_operation = '-'
-            difference_lifes = old_count_lifes - new_count_lifes
+            difference_lives = old_count_lives - new_count_lives
         else:
             change_operation = '+'
-            difference_lifes = new_count_lifes - old_count_lifes
-        action = change_operation + str(difference_lifes)
-        await con.execute('INSERT INTO history_of_lifes VALUES(?, ?, ?, ?)', (user_id, None, new_count_lifes, action))
+            difference_lives = new_count_lives - old_count_lives
+        action = change_operation + str(difference_lives)
+        await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, new_count_lives, action))
         await con.commit()
 
 
@@ -696,3 +720,28 @@ async def change_deadline(user_id: int, task_id: int, new_date: str) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         await con.execute('INSERT INTO changed_deadlines VALUES(?, ?, ?)', (user_id, task_id, new_date))
         await con.commit()
+
+
+async def get_metric_user(user_id: int) -> dict:
+    async with aiosqlite.connect('educated_platform.db') as con:
+        con.row_factory = aiosqlite.Row
+        query = """
+               SELECT
+                   COUNT(DISTINCT lp.exercise_id) AS right_answers,
+                   COUNT(DISTINCT e.exercise_id) AS total_exercises
+               FROM users u
+               LEFT JOIN blocks b ON u.course_id = b.course_id
+               LEFT JOIN tasks t ON t.block_id = b.block_id
+               LEFT JOIN exercises e ON e.task_id = t.task_id
+               LEFT JOIN learning_progress lp
+                ON lp.user_id = u.user_id
+                AND lp.exercise_id = e.exercise_id
+                AND lp.right_answer = 1
+               WHERE u.user_id = ?
+               """
+
+        async with con.execute(query, (user_id,)) as cursor:
+            row = await cursor.fetchone()
+            if row is None:
+                return {'right_answers': 0, 'total_exercises': 0}
+            return {'total_exercises': int(row['total_exercises']), 'right_answers': int(row['right_answers'])}

@@ -18,7 +18,8 @@ router = Router()
 async def getting_name_user(message: Message, state: FSMContext):
     name_user_split = message.text.split()
     reg_msg_for_deletion = await state.get_value('reg_msg_for_deletion', [])
-    if len(name_user_split) == 2 and len(name_user_split[0]) >= 2 and len(name_user_split[1]) >= 2:
+    if len(name_user_split) == 2 and len(name_user_split[0]) >= 2 and len(name_user_split[1]) >= 2 and name_user_split[
+        0].isalpha and name_user_split[1].isalpha:
         name_user = f'{name_user_split[0][0].upper()}{name_user_split[0][1:].lower()} {name_user_split[1][0].upper()}{name_user_split[1][1:].lower()}'
         sent_message = await message.answer(
             'Теперь отправь мне свою локацию или название ближайшего большого города. Это нужно для корректного отображения дедлайнов',
@@ -68,7 +69,7 @@ async def registration_user(message: Message, state: FSMContext):
             "Не удалось определить часовой пояс по указанным данным. Попробуйте снова.")
         reg_msg_for_deletion += [sent_message_2.message_id]
         return
-    role = 'student' #if message.from_user.id != 795508218 else 'admin'
+    role = 'student' if message.from_user.id != 795508218 else 'admin'
     real_name_user = state_data['real_name']
     # Регистрируем пользователя в базе данных
     course_user = await db.registration_user(real_name_user, message.from_user.username, message.from_user.id,

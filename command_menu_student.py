@@ -10,16 +10,16 @@ import keyboard as kb
 router = Router()
 
 
-@router.callback_query(F.data == 'list_lifes')
-async def opening_list_lifes(callback_query: CallbackQuery):
+@router.callback_query(F.data == 'list_lives')
+async def opening_list_lives(callback_query: CallbackQuery):
     await callback_query.answer()
-    history_lifes_user = await db.get_history_lifes_user(callback_query.from_user.id)
+    history_lives_user = await db.get_history_lives_user(callback_query.from_user.id)
     text_message = "📝 История изменений жизней:\n\n"
-    for change in history_lifes_user:
+    for change in history_lives_user:
         action = change['action']
         if action == '-1':
             if change['task_title']:
-                text_message += f'{action}❤️ Просрочен дедлайн к уроку {change['task_title']}\n'
+                text_message += f'{action}❤️ Просрочен дедлайн {change['task_title']}\n'
             else:
                 text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
         elif action == '+3':
@@ -29,47 +29,79 @@ async def opening_list_lifes(callback_query: CallbackQuery):
     await callback_query.message.edit_text(text=text_message, reply_markup=kb.back_button_admin)
 
 
-@router.callback_query(F.data == 'block_list')
+@router.callback_query(lambda c: c.data.startswith('block_list'))
 async def open_blocks_list(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     state_data = await state.get_data()
-    user_id = callback_query.from_user.id
+    admin_connection = state_data.get('admin_connection')
+    user_id = state_data['user_id'] if admin_connection else callback_query.from_user.id
+    state_data['user_id'] = user_id
     user_data = await db.get_data_user(user_id)
-    reminder_message_id = state_data.get('reminder_message_id', None)
-    notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id', None)
+    course_id = user_data['course_id']
+    state_data['course_id'] = course_id
+    reminder_message_id = state_data.get('reminder_message_id')
+    notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id')
+
     if reminder_message_id:
         await bot.delete_message(chat_id=callback_query.from_user.id, message_id=reminder_message_id)
         state_data.pop('reminder_message_id')
     if notification_about_new_task_message_id:
         await bot.delete_message(chat_id=callback_query.from_user.id, message_id=notification_about_new_task_message_id)
         state_data.pop('notification_about_new_task_message_id')
-    await state.set_data(state_data)
+
     await callback_query.message.edit_text('🎓 Доступные блоки занятий:',
-                                           reply_markup=await kb.mapping_block_list(user_data['course_id']))
+                                           reply_markup=await kb.mapping_block_list(user_id, course_id,
+                                                                                    admin_connection=admin_connection))
+    await state.set_data(state_data)
 
 
 @router.callback_query(lambda c: c.data.startswith('open_block'))
 async def open_tasks_list(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
-    action, course_id, block_id = callback_query.data.split(':')
-    user_id = callback_query.from_user.id
+    state_data = await state.get_data()
+    callback_data_split = callback_query.data.split(':')
+    if len(callback_data_split) == 2:
+        action, block_id = callback_query.data.split(':')
+    else:
+        action = callback_query.data
+        block_id = state_data['block_id']
+
+    course_id = state_data['course_id']
+    user_id = state_data.get('user_id', callback_query.from_user.id)
+
+    admin_connection = state_data.get('admin_connection', False)
+
     if action == 'open_block_from_homework':
-        state_data = await state.get_data()
-        abstract = state_data.get('message_abstract_id', False)
-        if abstract:
-            await callback_query.message.bot.delete_message(chat_id=callback_query.message.chat.id, message_id=abstract)
-            state_data.pop('message_abstract_id')
-        await callback_query.message.delete()
+        command_menu_id = state_data['command_menu_id']
+        abstract_message = state_data.get('message_abstract_id')
+        homework_message = state_data.get('homework_message_id')
+        if abstract_message:
+            await callback_query.message.bot.delete_message(chat_id=callback_query.from_user.id,
+                                                            message_id=abstract_message)
+        if homework_message:
+            await callback_query.message.bot.delete_message(chat_id=callback_query.from_user.id,
+                                                            message_id=homework_message)
+        await callback_query.message.bot.delete_message(chat_id=callback_query.from_user.id, message_id=command_menu_id)
         command_menu = await callback_query.message.answer('Список занятий:',
                                                            reply_markup=await kb.mapping_list_tasks(user_id,
                                                                                                     int(course_id),
                                                                                                     int(block_id)))
         await state.clear()
         await state.set_state(st.MappingExercise.mapping_task)
-        await state.update_data(course_id=course_id, command_menu_id=command_menu.message_id)
+        data = {
+            "user_id": user_id,
+            "course_id": course_id,
+            "command_menu_id": command_menu.message_id,
+            "block_id": block_id,
+        }
+
+        if admin_connection:
+            data["admin_connection"] = admin_connection
+
+        await state.update_data(**data)
 
     else:
-        await state.update_data(course_id=course_id)
+        await state.update_data(course_id=course_id, block_id=block_id)
         await callback_query.message.edit_text('Список занятий:',
                                                reply_markup=await kb.mapping_list_tasks(user_id, int(course_id),
                                                                                         int(block_id)))
@@ -80,17 +112,23 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     await state.set_state(st.MappingExercise.mapping_task)
     state_data = await state.get_data()
-    action, course_id, task_id, from_remind = callback_query.data.split(':')
-    if int(from_remind):
-        await bot.delete_message(chat_id=callback_query.from_user.id, message_id=state_data['command_menu_id'])
-        state_data.pop('command_menu_id')
-        await state.set_data(state_data)
+    user_id = state_data.get('user_id', callback_query.from_user.id)
+    if callback_query.data == 'open_task':
+        last_task = await db.get_last_task(user_id)
+        course_id, block_id, task_id = last_task.values()
+        await state.update_data(course_id=course_id, block_id=block_id, task_id=task_id)
+    else:
+        _, course_id, task_id, from_remind = callback_query.data.split(':')
+        if int(from_remind):
+            await bot.delete_message(chat_id=callback_query.from_user.id, message_id=state_data['command_menu_id'])
+            state_data.pop('command_menu_id')
+            await state.set_data(state_data)
     task_id = int(task_id)
     task_data = await db.get_data_task(task_id)
     date_obj = datetime.strptime(task_data['deadline'], '%Y-%m-%d')
     deadline = date_obj.strftime('%d-%m-%Y')
     text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {deadline}'
-    session = await db.get_last_session(callback_query.from_user.id, task_id)
+    session = await db.get_last_session(user_id, task_id)
     progress_user = await db.get_progress_user(task_id, session['session_id']) if session else \
         await db.get_progress_user(task_id)
     if progress_user:
@@ -113,7 +151,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=await kb.mapping_task(course_id, task_data['block_id'],
+        reply_markup=await kb.mapping_task(task_data['block_id'],
                                            message_abstract_id)
     )
     await state.update_data(task_data=task_data, task_message_id=sent_message.message_id, course_id=course_id,
@@ -125,6 +163,7 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     await callback_query.message.edit_reply_markup(reply_markup=None)
     state_data = await state.get_data()
+    admin_connection = state_data.get('admin_connection', False)
     file_work = state_data.get('file_work')
     homework = await db.get_list_exercises(state_data['task_data']['task_id'])
     await state.set_state(st.MappingExercise.solving_homework)
@@ -143,7 +182,8 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     homework_message = await callback_query.message.answer(text=text_message,
                                                            reply_markup=await kb.mapping_homework(quantity_exercise,
                                                                                                   current_exercise,
-                                                                                                  file_work))
+                                                                                                  file_work,
+                                                                                                  admin_connection))
     await state.update_data(quantity_exercise=quantity_exercise, homework=homework, current_exercise=current_exercise,
                             homework_message_id=homework_message.message_id,
                             session_start=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

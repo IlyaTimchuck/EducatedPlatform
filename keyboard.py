@@ -5,12 +5,13 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 import calendar
 
 
-async def mapping_block_list(course_id: int):
+async def mapping_block_list(user_id: int, course_id: int, admin_connection: bool):
     data = await db.get_blocks(course_id)
     builder = InlineKeyboardBuilder()
     for block in data:
-        builder.row(InlineKeyboardButton(text=f'{block} блок', callback_data=f'open_block:{course_id}:{data[block]}'))
-    builder.row(*[InlineKeyboardButton(text='Назад', callback_data='back_student')])
+        builder.row(InlineKeyboardButton(text=f'{block} блок',
+                                         callback_data=f'open_block:{data[block]}'))
+    builder.row(*[InlineKeyboardButton(text='Назад ↩️', callback_data=f'open_metric_user:{user_id}' if admin_connection else 'back_student')])
     return builder.as_markup()
 
 
@@ -23,10 +24,11 @@ async def mapping_list_tasks(user_id: int, course_id: int, block_id: int) -> Inl
         builder.row(
             *[InlineKeyboardButton(text=f'{task_title}{task_status}',
                                    callback_data=f'open_task:{course_id}:{task_id}:0')])
+    builder.row(*[InlineKeyboardButton(text='Назад ↩️', callback_data=f'block_list')])
     return builder.as_markup()
 
 
-async def mapping_homework(quantity_exercise: int, current_exercise: int, file_work: bool) -> InlineKeyboardMarkup:
+async def mapping_homework(quantity_exercise: int, current_exercise: int, file_work: bool, admin_connection: bool) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if current_exercise == 1:
         builder.add(
@@ -44,15 +46,19 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
             InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),
             InlineKeyboardButton(text='\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))
         builder.adjust(3)
-    if file_work:
+    if admin_connection:
+        builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data=f'open_block_from_homework')])
+    elif file_work:
         builder.row(
             *[InlineKeyboardButton(text='Сохранить ответы и перейти к отправке файла', callback_data='get_file_work')])
+        builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data=f'open_block_from_homework')])
     else:
         builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])
+        builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data=f'open_block_from_homework')])
     return builder.as_markup()
 
 
-async def mapping_task(course_id, block_id, abstract_retrieved: bool = False) -> InlineKeyboardMarkup:
+async def mapping_task(block_id, abstract_retrieved: bool = False) -> InlineKeyboardMarkup:
     keyboard_buttons = [
         [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]
     ]
@@ -61,7 +67,7 @@ async def mapping_task(course_id, block_id, abstract_retrieved: bool = False) ->
             [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')]
         )
     keyboard_buttons.append([
-        InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{course_id}:{block_id}'),
+        InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{block_id}'),
         InlineKeyboardButton(text='В главное меню', callback_data='back_student')
     ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
@@ -133,14 +139,15 @@ async def to_change_block(current_block):
     return change_block_buttons
 
 
-async def choose_course_inline():
+async def choose_course_inline(for_add_task: bool):
     """Используется для добавления задания"""
     builder = InlineKeyboardBuilder()
     courses = await db.get_list_courses()
+    callback_data = 'course_selection_for_task_creation' if for_add_task else 'course_selection_for_user_metrics'
     for course in courses:
         builder.add(
-            InlineKeyboardButton(text=course['course_title'], callback_data=f"choose_course:{course['course_title']}"))
-
+            InlineKeyboardButton(text=course['course_title'], callback_data=f"{callback_data}:{course['course_id']}"))
+    builder.row(InlineKeyboardButton(text='Назад', callback_data='back_admin'))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
@@ -158,28 +165,52 @@ async def choose_course_reply():
 async def send_command_menu(user_id: int):
     user_data = await db.get_data_user(user_id)
     if user_data['role'] == 'student':
-        last_task = await db.get_last_task(user_id)
-        callback_data_last_task = f'open_task:{last_task['course_id']}:{last_task['task_id']}:0' if last_task else 'ignore'
         command_menu = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
-            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data=callback_data_last_task)],
-            [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lifes')],
+            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='open_task')],
+            [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
         ])
-        lifes = user_data['lifes']
+        lives = user_data['lives']
         deadline_today = await db.get_today_deadline_for_keyboard(user_id)
-        text_message = f'Текущее количество жизней: {lifes * '❤️'}\n'
+        text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
         if deadline_today:
-            text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}'
+            text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}\n'
         else:
-            text_message += 'Дедлайны сегодня: -'
+            text_message += 'Дедлайны сегодня: -\n'
+        metric_user = await db.get_metric_user(user_id)
+        right_answers = metric_user['right_answers']
+        total_exercises = metric_user['total_exercises']
+        quotient = str(round((right_answers / total_exercises)) * 100)+'%' if total_exercises != 0 else '-'
+        text_message += f'Всего решено заданий на курсе: {metric_user['right_answers']}\nПроцент выполненных заданий: {quotient}'
         return text_message, command_menu
     elif user_data['role'] == 'admin':
         command_menu = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Добавить урок', callback_data='add_lesson')],
-            [InlineKeyboardButton(text='Добвить пользователей', callback_data='add_users')]
+            [InlineKeyboardButton(text='Контроль успеваемости', callback_data='get_list_courses')],
+            [InlineKeyboardButton(text='Добавить пользователей', callback_data='add_users')]
         ])
         text_message = 'Распознал тебя как админа'
         return text_message, command_menu
+
+
+async def mapping_list_users(course_id: int):
+    builder = InlineKeyboardBuilder()
+    list_users = await db.get_users_by_course(course_id)
+    for user_data in list_users:
+        builder.row(InlineKeyboardButton(text=user_data['real_name'],
+                                         callback_data=f'open_metric_user:{user_data['user_id']}'))
+    builder.row(InlineKeyboardButton(text='Назад', callback_data='get_list_courses'))
+    return builder.as_markup()
+
+
+async def get_more_metric(user_id: int):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text='Открыть последний решенный урок',
+                              callback_data='open_task')],
+        [InlineKeyboardButton(text='Перейти к урокам пользователя',
+                              callback_data='block_list')]
+    ])
+    return keyboard
 
 
 async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> InlineKeyboardMarkup:
@@ -196,6 +227,7 @@ async def confirm_deleting_user(user_id: int) -> InlineKeyboardMarkup:
          InlineKeyboardButton(text='Подтвердить', callback_data=f'confirm_deleting:{user_id}')]
     ])
     return keyboard
+
 
 back_button_student = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Назад', callback_data='back_student')]
@@ -245,7 +277,6 @@ confirm_completing_work_file = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Вернуться назад', callback_data='open_homework'),
      InlineKeyboardButton(text='Завершить', callback_data='complete_homework')]
 ])
-
 
 block_button = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Попробовать еще раз', callback_data='attempt_to_log_in')]

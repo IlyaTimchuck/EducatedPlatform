@@ -14,7 +14,7 @@ class LifeCheckMiddleware(BaseMiddleware):
             data: Dict[str, Any]
     ) -> Any:
         user = getattr(event, "from_user", None)
-        lives = await db.get_lifes_user(user.id)
+        lives = await db.get_lives_user(user.id)
         if lives <= 0:
 
             if not (await db.get_data_user(user.id)):

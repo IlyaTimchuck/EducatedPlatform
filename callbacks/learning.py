@@ -5,6 +5,8 @@ from datetime import datetime
 
 from bot_instance import bot
 import state as st
+
+
 import database as db
 import keyboard as kb
 
@@ -34,6 +36,7 @@ async def mapping_exercise(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     current_exercise = int(callback_query.data.split(':')[-1])
     state_data = await state.get_data()
+    admin_connection = state_data.get('admin_connection', False)
     quantity_exercise = state_data['quantity_exercise']
     homework = state_data['homework']
     answers = state_data.get('results', {})
@@ -48,7 +51,7 @@ async def mapping_exercise(callback_query: CallbackQuery, state: FSMContext):
 
     current_message = await callback_query.message.edit_text(
         text=text_message,
-        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, file_work)
+        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, file_work, admin_connection)
     )
 
     await state.update_data(
@@ -105,8 +108,10 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
         for message_id in messages_getting_file_work:
             await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message_id)
         await state.update_data(messages_getting_file_work=[])
+        state_data.pop('messages_getting_file_work')
     else:
         await callback_query.message.delete()
+        state_data.pop('homework_message_id')
     session_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     quotient = int((state_data.get('quantity_right_answers', 0) / state_data['quantity_exercise']) * 100)
     is_completed = quotient >= 90
@@ -121,13 +126,14 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     if link_files:
         text_message += f'\n\nФайлы к домашней работе: {link_files}'
     message_abstract_id = state_data.get('message_abstract_id', False)
+    await state.set_data(state_data)
     await callback_query.bot.edit_message_media(
         chat_id=callback_query.message.chat.id,
         message_id=state_data['task_message_id'],
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=await kb.mapping_task(state_data['course_id'], task_data['block_id'],
+        reply_markup=await kb.mapping_task(task_data['block_id'],
                                             bool(message_abstract_id))
     )
 
