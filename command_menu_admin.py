@@ -20,7 +20,7 @@ async def process_deleting_user(callback_query: CallbackQuery):
         user_data_for_table = [user_data['real_name'], user_data['telegram_username'], course_title, user_id, timezone,
                                user_data['date_of_joining'], 'student', 3]
         await google_client.add_user_in_table(*user_data_for_table)
-        await callback_query.answer('Удаление было отменено. Все данные пользоателя восстановлены')
+        await callback_query.answer('Удаление было отменено. Все данные пользователя восстановлены')
         await callback_query.message.delete()
     else:
         await db.delete_all_user_data(user_id)
@@ -74,4 +74,4 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         else:
             text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
     await callback_query.message.edit_text(text_message,
-                                           reply_markup=await kb.get_more_metric(user_id))
+                                           reply_markup=await kb.get_more_metric())

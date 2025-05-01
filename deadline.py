@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 from bot_instance import bot, dp
 from aiogram.fsm.storage.base import StorageKey
 from google_table import google_client
+from utils import send_notification_of_life_updates
 import logging
 
 import database as db
@@ -25,6 +26,8 @@ async def check_deadlines(timezone_id: int):
     if progress_users:
         updates = await db.update_deadlines_and_lives_bulk(progress_users, timezone_id)
         await google_client.batch_set_lives_for_users(updates)
+        await send_notification_of_life_updates(updates, timezone_name)
+
     logger.info('Проверка была выполнена, жизни в таблице обновлены')
 
 

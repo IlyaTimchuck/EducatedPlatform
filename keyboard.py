@@ -11,7 +11,8 @@ async def mapping_block_list(user_id: int, course_id: int, admin_connection: boo
     for block in data:
         builder.row(InlineKeyboardButton(text=f'{block} блок',
                                          callback_data=f'open_block:{data[block]}'))
-    builder.row(*[InlineKeyboardButton(text='Назад ↩️', callback_data=f'open_metric_user:{user_id}' if admin_connection else 'back_student')])
+    builder.row(*[InlineKeyboardButton(text='Назад ↩️',
+                                       callback_data=f'open_metric_user:{user_id}' if admin_connection else 'back_student')])
     return builder.as_markup()
 
 
@@ -28,7 +29,8 @@ async def mapping_list_tasks(user_id: int, course_id: int, block_id: int) -> Inl
     return builder.as_markup()
 
 
-async def mapping_homework(quantity_exercise: int, current_exercise: int, file_work: bool, admin_connection: bool) -> InlineKeyboardMarkup:
+async def mapping_homework(quantity_exercise: int, current_exercise: int, file_work: bool,
+                           admin_connection: bool) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if current_exercise == 1:
         builder.add(
@@ -58,13 +60,17 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
     return builder.as_markup()
 
 
-async def mapping_task(block_id, abstract_retrieved: bool = False) -> InlineKeyboardMarkup:
+async def mapping_task(block_id, abstract_retrieved: bool = False, file_work: bool = False) -> InlineKeyboardMarkup:
     keyboard_buttons = [
         [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]
     ]
     if not abstract_retrieved:
         keyboard_buttons.append(
             [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')]
+        )
+    if file_work:
+        keyboard_buttons.append(
+            [InlineKeyboardButton(text='Получить свой рабочий файл', callback_data='get_file_work')]
         )
     keyboard_buttons.append([
         InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{block_id}'),
@@ -180,7 +186,7 @@ async def send_command_menu(user_id: int):
         metric_user = await db.get_metric_user(user_id)
         right_answers = metric_user['right_answers']
         total_exercises = metric_user['total_exercises']
-        quotient = str(round((right_answers / total_exercises)) * 100)+'%' if total_exercises != 0 else '-'
+        quotient = str(round((right_answers / total_exercises)) * 100) + '%' if total_exercises != 0 else '-'
         text_message += f'Всего решено заданий на курсе: {metric_user['right_answers']}\nПроцент выполненных заданий: {quotient}'
         return text_message, command_menu
     elif user_data['role'] == 'admin':
@@ -203,7 +209,7 @@ async def mapping_list_users(course_id: int):
     return builder.as_markup()
 
 
-async def get_more_metric(user_id: int):
+async def get_more_metric():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Открыть последний решенный урок',
                               callback_data='open_task')],

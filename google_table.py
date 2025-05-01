@@ -117,7 +117,6 @@ class GoogleSheetsClient:
         col_user_id = headers.index('user_id') + 1
         col_lives = headers.index('lives') + 1
 
-        # строим маппинг "user_id" → номер строки
         id_to_row = {
             row[col_user_id - 1]: idx
             for idx, row in enumerate(all_values[1:], start=2)
@@ -128,15 +127,13 @@ class GoogleSheetsClient:
             row_num = id_to_row.get(str(user_id))
             if not row_num:
                 continue
-            # rowcol_to_a1 возвращает, например, 'I3'
             cell_a1 = rowcol_to_a1(row_num, col_lives)
             batch_data.append({
-                'range': cell_a1,  # ← без имени листа
+                'range': cell_a1,
                 'values': [[f'{new_lives}❤️']],
             })
 
         if batch_data:
-            # Первый аргумент — ваш список data, второй — опция
             await worksheet.batch_update(
                 batch_data,
                 value_input_option='USER_ENTERED'
@@ -144,7 +141,6 @@ class GoogleSheetsClient:
 
 
 async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) -> None:
-    # Первичная установка флага, чтобы не считать первое чтение "обновлением"
     await google_sheets_client.check_for_updates()
 
     while True:
@@ -156,7 +152,6 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                 ws_users = await google_sheets_client.spreadsheet.worksheet('users')
                 raw_users = await ws_users.get_all_values()
                 headers_users, users_rows = raw_users[0], raw_users[1:]
-                # нормализуем: всё в нижний регистр, без пробелов
                 normalized_users = [h.strip().lower() for h in headers_users]
 
                 for i, row in enumerate(users_rows, start=2):
@@ -181,19 +176,12 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
 
                         # 2) изменение жизней
                         elif update_time != '-':
-                            # читаем новое кол-во жизней
                             lives_str = row_dict.get('lives', '0').strip()
                             new_lives = int(lives_str[0]) if lives_str and lives_str[0].isdigit() else 0
-
-                            # обновляем БД
                             logger.info(f"Updating lives for user {uid}: {new_lives}")
                             await db.update_lives_for_user(uid, new_lives)
-
-                            # пишем обратно в лист актуальное значение
                             col_lives = normalized_users.index('lives') + 1
                             await ws_users.update_cell(i, col_lives, f'{new_lives}❤️')
-
-                            # сбрасываем флаг Update_time
                             col_upd = normalized_users.index('update_time') + 1
                             await ws_users.update_cell(i, col_upd, '-')
 
@@ -221,8 +209,6 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
 
                             logger.info(f"Updating deadline for {uid}, task {tid}: {deadline}")
                             await db.change_deadline(uid, tid, deadline)
-
-                            # сбрасываем флаг Update_time
                             col_upd = normalized_dead.index('update_time') + 1
                             await ws_dead.update_cell(j, col_upd, '-')
 
@@ -230,7 +216,6 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                         logger.error(f"Error processing deadlines row {j}: {e}")
                         continue
 
-            # пауза перед следующим циклом
             await asyncio.sleep(60 + random.randint(0, 5))
 
         except HttpError as http_err:
@@ -250,7 +235,6 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
             await asyncio.sleep(60)
 
 
-# создаём клиента и запускаем цикл где-нибудь в main.py
 google_client = GoogleSheetsClient(
     creds_file='educatedplatform-a40aded26c1c.json',
     spreadsheet_id='1dRVN0o5TVgZ7zfcPZOej8VCq508xeWfNhPLexWTINWE'

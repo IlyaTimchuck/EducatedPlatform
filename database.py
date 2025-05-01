@@ -478,8 +478,9 @@ async def get_timezones() -> dict:
 
 async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> list:
     """
-    Возвращает список строк, где каждая строка содержит:
+    Возвращает список словарей, где каждый словарь содержит:
       - user_id: идентификатор пользователя
+      - real_name: фамилия и имя пользователя
       - task_id: идентификатор задания
       - actual_deadline: дедлайн, учитывающий changed_deadlines
       - is_completed: статус завершения сессии (может быть None, если сессии нет)
@@ -491,7 +492,9 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
         con.row_factory = aiosqlite.Row
         query = """SELECT
                 u.user_id,
+                u.real_name,
                 t.task_id,
+                t.task_title,
                 u.lives
             FROM tasks t
             JOIN blocks b ON b.block_id = t.block_id
