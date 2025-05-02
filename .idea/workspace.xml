@@ -4,16 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="реализовано полное ограничение доступа к курсу в случае, если у пользователя полностью закончились жизни. если жизни появляются доступ восстанавливается">
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="добавлен контроль успеваемости учеников для админского аккаунта. добавлены метрики пользователей. доабвлена кнопка вернуться назад в решении домашней работы и кнопка назад в списке уроков. отредактированы функции в базе данных по получению текущих дедлайнов (теперь учитываются changed_deadline), исправлена функция актауализации жизней в гугл таблице">
       <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/command_menu_admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/command_menu_admin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bot_instance.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot_instance.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/callbacks/learning.py" beforeDir="false" afterPath="$PROJECT_DIR$/callbacks/learning.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/command_menu_student.py" beforeDir="false" afterPath="$PROJECT_DIR$/command_menu_student.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deadline.py" beforeDir="false" afterPath="$PROJECT_DIR$/deadline.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/google_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/google_table.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/recording_answers.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/recording_answers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/keyboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboard.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,8 +39,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/IlyaTimchuck/EducatedPlatform.git&quot;,
-    &quot;accountId&quot;: &quot;0e8c499a-e6aa-4e6f-90fb-34acffe04e66&quot;
+    &quot;url&quot;: &quot;https://github.com/IlyaTimchuck/EducatedPlatform&quot;,
+    &quot;accountId&quot;: &quot;0673eef9-6c6a-4377-9177-4560af06ab4a&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -273,7 +274,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-fc1d50d2d915-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.24978.54" />
+        <option value="bundled-python-sdk-6a3326d57233-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.24807.21" />
       </set>
     </attachedChunks>
   </component>

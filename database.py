@@ -23,6 +23,7 @@ async def create_db() -> None:
         # await con.execute("DROP TABLE IF EXISTS changed_deadlines")
         # await con.execute("DROP TABLE IF EXISTS timezones")
         # await con.execute("DROP TABLE IF EXISTS history_of_lives")
+        # await con.execute("DROP TABLE IF EXISTS session_files")
 
         await con.execute("PRAGMA foreign_keys = ON;")
 
@@ -111,6 +112,11 @@ async def create_db() -> None:
                     FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE,
                     FOREIGN KEY(task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
                 )""")
+        await con.execute("""CREATE TABLE IF NOT EXISTS session_files (
+                    session_id INTEGER PRIMARY KEY,
+                    file_work_id TEXT,
+                    FOREIGN KEY(session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
+                )""")
         await con.execute("""CREATE TRIGGER IF NOT EXISTS delete_empty_course
                     AFTER DELETE ON users
                     BEGIN
@@ -127,19 +133,13 @@ async def create_db() -> None:
                     END""")
 
         await con.execute("""CREATE TRIGGER IF NOT EXISTS delete_empty_timezone
-                            AFTER DELETE ON users
-                            BEGIN
-                                DELETE FROM timezones
-                                WHERE timezone_id = OLD.timezone_id
-                                AND NOT EXISTS (
-                                    SELECT 1 FROM users WHERE timezone_id = OLD.timezone_id);
-                            END""")
-
-        # await con.execute('''CREATE TABLE IF NOT EXISTS  requires_verification (
-        #     user_id INTEGER,
-        #     task_id INTEGER,
-        #     file_id TEXT,
-        #     verified BOOL DEFAULT 0)''')
+                    AFTER DELETE ON users
+                    BEGIN
+                        DELETE FROM timezones
+                        WHERE timezone_id = OLD.timezone_id
+                        AND NOT EXISTS (
+                            SELECT 1 FROM users WHERE timezone_id = OLD.timezone_id);
+                    END""")
         await con.commit()
 
 
@@ -362,30 +362,19 @@ async def mapping_task_status(user_id: int, task_id: int) -> str:
             total_exercises = row['total_exercises']
             completed_exercises = row['completed_exercises'] or 0
             deadline_str = row['deadline']
-
-            # Парсим дедлайн с учетом того, что он может содержать только дату
             deadline = None
             if deadline_str:
                 try:
-                    # Если строка содержит только дату (YYYY-MM-DD)
                     if len(deadline_str) == 10:
                         deadline = datetime.strptime(deadline_str, '%Y-%m-%d')
                     else:
                         deadline = datetime.strptime(deadline_str, '%Y-%m-%d %H:%M:%S')
                 except ValueError:
-                    # Если формат не соответствует ни одному из ожидаемых вариантов,
-                    # можно залогировать ошибку или задать deadline = None
                     deadline = None
-
-            # Если дедлайн задан и прошёл, и не все упражнения выполнены до дедлайна – возвращаем ❌
             if deadline and datetime.now() > deadline and completed_exercises < total_exercises:
                 return '❌'
-
-            # Если все упражнения выполнены – возвращаем ✅
             if completed_exercises == total_exercises:
                 return '✅'
-
-            # Иначе возвращаем статус "в процессе" – ⏳
             return '⏳'
 
 
@@ -404,16 +393,10 @@ async def get_progress_user(task_id: int, session_id: int = None) -> dict:
         con.row_factory = aiosqlite.Row
 
         query = """
-        SELECT
-            e.exercise_id,
-            lp.input_answer,
-            lp.right_answer
-        FROM
-            learning_progress AS lp
-        JOIN
-            exercises AS e ON lp.exercise_id = e.exercise_id
-        WHERE
-            e.task_id = ?
+        SELECT e.exercise_id, lp.input_answer, lp.right_answer
+        FROM learning_progress AS lp
+        JOIN exercises AS e ON lp.exercise_id = e.exercise_id
+        WHERE e.task_id = ?
         """
 
         params = (task_id,)
@@ -432,14 +415,15 @@ async def get_progress_user(task_id: int, session_id: int = None) -> dict:
 
 
 async def add_progress_user(user_id: int, task_id: int, homework: dict, results: dict, session_start: str,
-                            session_end: str, is_completed: bool = False) -> None:
+                            session_end: str, file_work_id: str, is_completed: bool) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         cursor = await con.execute(
             'INSERT INTO sessions (user_id, task_id, is_completed, session_start, session_end) VALUES (?, ?, ?, ?, ?)',
             (user_id, task_id, is_completed, session_start, session_end)
         )
         session_id = cursor.lastrowid
-
+        if file_work_id:
+            await con.execute('INSERT INTO session_files VALUES(?, ?)', (session_id, file_work_id))
         for exercise_num in homework:
             _, right_answer, exercise_id = homework[exercise_num]
             input_answer = results.get(exercise_num, {}).get('input_answer', None)
@@ -456,12 +440,10 @@ async def get_last_session(user_id: int, task_id: int) -> dict:
     async with aiosqlite.connect('educated_platform.db') as con:
         con.row_factory = aiosqlite.Row
         query = '''
-            SELECT *
-            FROM sessions
-            WHERE user_id = ? AND task_id = ?
-            ORDER BY session_id DESC
-            LIMIT 1
-        '''
+            SELECT * FROM sessions s
+            LEFT JOIN session_files sf ON sf.session_id = s.session_id
+            WHERE s.user_id = ? AND s.task_id = ?
+            ORDER BY session_id DESC LIMIT 1'''
         async with con.execute(query, (user_id, task_id)) as cursor:
             row = await cursor.fetchone()
             return dict(row) if row else {}
@@ -507,7 +489,6 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
             GROUP BY u.user_id, t.task_id
             HAVING MAX(s.is_completed) IS NULL OR MAX(s.is_completed) = 0
                     """
-
         async with con.execute(query, (timezone_id, current_date)) as cursor:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows] if rows else []
@@ -515,22 +496,15 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
 
 async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> list:
     async with aiosqlite.connect('educated_platform.db') as con:
-        # Получаем значение timezone из timezones
         async with con.execute("SELECT timezone FROM timezones WHERE timezone_id = ?", (timezone_id,)) as cur:
             row = await cur.fetchone()
             if not row:
                 raise ValueError(f"Timezone with id {timezone_id} not found")
             tz_value = str(row[0])
-
-        # Вычисляем новый дедлайн как завтрашнюю дату с учетом timezone
         new_deadline = (datetime.now(tz=ZoneInfo(tz_value)) + timedelta(days=1)).strftime("%Y-%m-%d")
-
         await con.execute("BEGIN TRANSACTION")
         try:
-            # Группируем уникальные пары (user_id, task_id)
             unique_pairs = {(u["user_id"], u["task_id"]) for u in updates}
-
-            # Обновляем дедлайны в changed_deadlines с использованием UPSERT
             await con.executemany(
                 """INSERT INTO changed_deadlines (user_id, task_id, deadline)
                    VALUES (?, ?, ?)
@@ -538,29 +512,19 @@ async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> li
                    DO UPDATE SET deadline = excluded.deadline""",
                 [(user_id, task_id, new_deadline) for user_id, task_id in unique_pairs]
             )
-
-            # Считаем количество списаний для каждого пользователя
             user_counts = defaultdict(int)
             for u in updates:
                 user_counts[u["user_id"]] += 1
-
-            # Обновляем жизни для каждого пользователя
             await con.executemany(
                 """UPDATE users 
                    SET lives = MAX(lives - ?, 0)
                    WHERE user_id = ?""",
                 [(count, user_id) for user_id, count in user_counts.items()]
             )
-
-            # Готовим записи для истории списаний.
-            # Предполагаем, что в updates для каждого пользователя поле "lives" содержит текущее значение до списания.
             history_records = []
             for u in updates:
-                # Если один пользователь появляется несколько раз, мы будем добавлять несколько записей.
                 new_lives = u["lives"] - user_counts[u["user_id"]]
                 history_records.append((u["user_id"], u["task_id"], new_lives, '-1'))
-
-            # Выполняем пакетную вставку в history_of_lives
             await con.executemany(
                 "INSERT INTO history_of_lives VALUES (?, ?, ?, ?)",
                 history_records
@@ -571,8 +535,6 @@ async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> li
         except Exception as e:
             await con.rollback()
             raise e
-
-
 
 
 async def get_today_deadline_for_remind(timezone_id: int) -> list:
@@ -594,18 +556,15 @@ async def get_today_deadline_for_remind(timezone_id: int) -> list:
 
 async def get_today_deadline_for_keyboard(user_id: int):
     async with aiosqlite.connect('educated_platform.db') as con:
-        # Чтобы получить Row как dict
         con.row_factory = aiosqlite.Row
-
-        # 1) Узнаём timezone пользователя
         async with con.execute(
-            """
-            SELECT t.timezone
-              FROM timezones t
-              JOIN users u ON t.timezone_id = u.timezone_id
-             WHERE u.user_id = ?
-            """,
-            (user_id,)
+                """
+                SELECT t.timezone
+                  FROM timezones t
+                  JOIN users u ON t.timezone_id = u.timezone_id
+                 WHERE u.user_id = ?
+                """,
+                (user_id,)
         ) as cur_tz:
             tz_row = await cur_tz.fetchone()
 
@@ -615,8 +574,6 @@ async def get_today_deadline_for_keyboard(user_id: int):
         tz = pytz.timezone(tz_row['timezone'])
         now = datetime.now(tz)
         tomorrow_str = (now + timedelta(days=1)).strftime('%Y-%m-%d')
-
-        # 2) Основной запрос — два плейсхолдера: user_id и дата
         query = """
             SELECT
                 u.user_id,
@@ -719,6 +676,7 @@ async def delete_all_user_data(user_id: int) -> None:
         await con.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
         await con.commit()
 
+
 async def change_deadline(user_id: int, task_id: int, new_date: str) -> None:
     async with aiosqlite.connect('educated_platform.db') as con:
         await con.execute('INSERT INTO changed_deadlines VALUES(?, ?, ?)', (user_id, task_id, new_date))
@@ -748,3 +706,4 @@ async def get_metric_user(user_id: int) -> dict:
             if row is None:
                 return {'right_answers': 0, 'total_exercises': 0}
             return {'total_exercises': int(row['total_exercises']), 'right_answers': int(row['right_answers'])}
+

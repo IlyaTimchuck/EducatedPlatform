@@ -6,15 +6,13 @@ from datetime import datetime
 from bot_instance import bot
 import state as st
 
-
 import database as db
 import keyboard as kb
 
 router = Router()
 
 
-
-@router.callback_query(F.data == 'get_abstract')
+@router.callback_query(F.data == 'send_abstract')
 async def send_abstract(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     task_data = (await state.get_data())['task_data']
@@ -22,7 +20,23 @@ async def send_abstract(callback_query: CallbackQuery, state: FSMContext):
     await state.update_data(message_abstract_id=sent_message.message_id)
     current_keyboard = callback_query.message.reply_markup.inline_keyboard
     new_keyboard = [
-        [button for button in row if button.callback_data != 'get_abstract']
+        [button for button in row if button.callback_data != 'send_abstract']
+        for row in current_keyboard
+    ]
+    await callback_query.message.edit_reply_markup(
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=new_keyboard)
+    )
+
+
+@router.callback_query(F.data == 'send_file_work')
+async def backing_to_task(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    file_id = await state.get_value('file_work_id')
+    sent_message = await callback_query.message.answer_document(document=file_id)
+    await state.update_data(message_file_work_id=sent_message.message_id)
+    current_keyboard = callback_query.message.reply_markup.inline_keyboard
+    new_keyboard = [
+        [button for button in row if button.callback_data != 'send_file_work']
         for row in current_keyboard
     ]
     await callback_query.message.edit_reply_markup(
@@ -36,11 +50,11 @@ async def mapping_exercise(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     current_exercise = int(callback_query.data.split(':')[-1])
     state_data = await state.get_data()
-    admin_connection = state_data.get('admin_connection', False)
+    admin_connection = state_data.get('admin_connection')
     quantity_exercise = state_data['quantity_exercise']
     homework = state_data['homework']
     answers = state_data.get('results', {})
-    file_work = state_data.get('file_work')
+    file_work = state_data['task_data'].get('file_work')
     if current_exercise in answers:
         answer_data = answers[current_exercise]
         user_answer = answer_data.get('input_answer', '')
@@ -79,7 +93,7 @@ async def getting_work_file(message: Message, state: FSMContext):
     messages_getting_file_work = state_data.get('messages_getting_file_work', [])
     try:
         message_user_id = message.message_id
-        file_work = message.document.file_id
+        file_work_id = message.document.file_id
         user_progress = ''
         for exercise_num in range(1, len(state_data.get('homework')) + 1):
             solve_user = state_data['results'].get(exercise_num)
@@ -87,10 +101,13 @@ async def getting_work_file(message: Message, state: FSMContext):
                 user_progress += f"{exercise_num}) {solve_user['input_answer']}{solve_user['status_input_answer']}\n"
             else:
                 user_progress += f"{exercise_num}) Ответ не был дан❌\n"
-        await bot.edit_message_reply_markup(chat_id=message.from_user.id, message_id=state_data['homework_message_id'], reply_markup=None)
-        sent_message = await message.answer(text=f'Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?', reply_markup=kb.confirm_completing_work_file)
+        await bot.edit_message_reply_markup(chat_id=message.from_user.id, message_id=state_data['homework_message_id'],
+                                            reply_markup=None)
+        sent_message = await message.answer(
+            text=f'Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?',
+            reply_markup=kb.confirm_completing_work_file)
         messages_getting_file_work += [message_user_id, sent_message.message_id]
-        await state.update_data(file_work=file_work, messages_getting_file_work=messages_getting_file_work)
+        await state.update_data(file_work_id=file_work_id, messages_getting_file_work=messages_getting_file_work)
     except Exception as e:
         print(e)
         sent_message = await message.answer(
@@ -104,20 +121,24 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
     messages_getting_file_work = state_data.get('messages_getting_file_work')
+    file_work_id = state_data.get('file_work_id', '')
     if messages_getting_file_work:
+        # удаляем homework_message + сообщения от заверешения homework
         for message_id in messages_getting_file_work:
             await bot.delete_message(chat_id=callback_query.from_user.id, message_id=message_id)
-        await state.update_data(messages_getting_file_work=[])
         state_data.pop('messages_getting_file_work')
     else:
+        # удаляем только homework_message
         await callback_query.message.delete()
-        state_data.pop('homework_message_id')
+    state_data.pop('homework_message_id')
     session_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     quotient = int((state_data.get('quantity_right_answers', 0) / state_data['quantity_exercise']) * 100)
     is_completed = quotient >= 90
     await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
-                               state_data.get('results', {}), state_data['session_start'], session_end, is_completed)
+                               state_data.get('results', {}), state_data['session_start'], session_end, file_work_id,
+                               is_completed)
     await state.update_data(session_end=session_end)
+    state_data['session_end'] = session_end
     await callback_query.answer(
         'Домашняя работа была принята' if is_completed else 'Порог не был пройден. Нужно минимум 90%',
         show_alert=False if is_completed else True)
@@ -134,7 +155,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
             media=task_data['video_id'],
             caption=text_message),
         reply_markup=await kb.mapping_task(task_data['block_id'],
-                                            bool(message_abstract_id))
+                                           bool(message_abstract_id), bool(file_work_id))
     )
 
 

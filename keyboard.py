@@ -16,7 +16,7 @@ async def mapping_block_list(user_id: int, course_id: int, admin_connection: boo
     return builder.as_markup()
 
 
-async def mapping_list_tasks(user_id: int, course_id: int, block_id: int) -> InlineKeyboardMarkup:
+async def mapping_list_tasks(user_id: int, block_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     tasks = await db.get_list_tasks(block_id)
     for task_title in tasks:
@@ -24,13 +24,31 @@ async def mapping_list_tasks(user_id: int, course_id: int, block_id: int) -> Inl
         task_status = await db.mapping_task_status(user_id, task_id)
         builder.row(
             *[InlineKeyboardButton(text=f'{task_title}{task_status}',
-                                   callback_data=f'open_task:{course_id}:{task_id}:0')])
+                                   callback_data=f'open_task:{task_id}:0')])
     builder.row(*[InlineKeyboardButton(text='Назад ↩️', callback_data=f'block_list')])
     return builder.as_markup()
 
 
-async def mapping_homework(quantity_exercise: int, current_exercise: int, file_work: bool,
-                           admin_connection: bool) -> InlineKeyboardMarkup:
+async def mapping_task(block_id, abstract_retrieved: bool = False, file_work: bool = False) -> InlineKeyboardMarkup:
+    keyboard_buttons = [
+        [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]
+    ]
+    if not abstract_retrieved:
+        keyboard_buttons.append(
+            [InlineKeyboardButton(text='Конспект урока', callback_data='send_abstract')]
+        )
+    if file_work:
+        keyboard_buttons.append(
+            [InlineKeyboardButton(text='Получить свой рабочий файл', callback_data='send_file_work')]
+        )
+    keyboard_buttons.append([
+        InlineKeyboardButton(text='Назад ↩️', callback_data=f'open_block_from_homework:{block_id}'),
+        InlineKeyboardButton(text='В главное меню', callback_data='back_student')
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+
+
+async def mapping_homework(quantity_exercise: int, current_exercise: int, file_work: bool, admin_connection: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if current_exercise == 1:
         builder.add(
@@ -48,35 +66,13 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
             InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),
             InlineKeyboardButton(text='\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))
         builder.adjust(3)
-    if admin_connection:
-        builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data=f'open_block_from_homework')])
-    elif file_work:
+    if file_work:
         builder.row(
             *[InlineKeyboardButton(text='Сохранить ответы и перейти к отправке файла', callback_data='get_file_work')])
-        builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data=f'open_block_from_homework')])
-    else:
+    elif not admin_connection:
         builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])
-        builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data=f'open_block_from_homework')])
+    builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data='back_to_task')])
     return builder.as_markup()
-
-
-async def mapping_task(block_id, abstract_retrieved: bool = False, file_work: bool = False) -> InlineKeyboardMarkup:
-    keyboard_buttons = [
-        [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]
-    ]
-    if not abstract_retrieved:
-        keyboard_buttons.append(
-            [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')]
-        )
-    if file_work:
-        keyboard_buttons.append(
-            [InlineKeyboardButton(text='Получить свой рабочий файл', callback_data='get_file_work')]
-        )
-    keyboard_buttons.append([
-        InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{block_id}'),
-        InlineKeyboardButton(text='В главное меню', callback_data='back_student')
-    ])
-    return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
 
 async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeyboardMarkup:

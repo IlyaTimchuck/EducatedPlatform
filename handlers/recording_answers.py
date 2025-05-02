@@ -1,6 +1,7 @@
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
+from aiogram.exceptions import TelegramBadRequest
 
 import state as st
 import keyboard as kb
@@ -20,7 +21,7 @@ async def record_answer(message: Message, state: FSMContext):
     status_input_answer = '✅' if result_answer else '❌'
     text_message = f'{condition}\nТвой ответ: {input_answer} {status_input_answer}'
     answers = state_data.get('results', {})
-    file_work = state_data.get('file_work')
+    file_work = state_data['task_data'].get('file_work')
     prev_status = answers.get(current_exercise, {}).get('status_input_answer')
     quantity_right_answers = state_data.get('quantity_right_answers', 0)
     if prev_status is None:
@@ -34,9 +35,12 @@ async def record_answer(message: Message, state: FSMContext):
     answers[current_exercise] = {'input_answer': input_answer, 'status_input_answer': status_input_answer}
     await state.update_data(results=answers, quantity_right_answers=quantity_right_answers)
     await message.delete()
-    await message.bot.edit_message_text(
-        chat_id=message.chat.id,
-        message_id=message_id,
-        text=text_message,
-        reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, file_work, admin_connection=False)
-    )
+    try:
+        await message.bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=message_id,
+            text=text_message,
+            reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, bool(file_work))
+        )
+    except TelegramBadRequest:
+        pass

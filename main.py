@@ -25,10 +25,10 @@ async def main() -> None:
     await db.add_users(['po1eena'], course_id)
     monitor_task = create_task(setup_monitoring())
     create_task(setup_google_polling_loop(google_client))
-    task_id = await db.add_task('Задание 16', course_id, False,
+    task_id = await db.add_task('Задание 16', course_id, True,
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
-                                None,
+                                'https://drive.google.com/drive/u/0/folders/1lBvGtrV48Ad6kNhdpag2G9op6Nvy-Zin',
                                 '2025-04-29')
     await db.add_exercise(task_id,
                           'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',
