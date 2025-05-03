@@ -1,42 +1,38 @@
 from asyncio import run, create_task, CancelledError
-from handlers.__init__ import setup_routers
-from callbacks.__init__ import setup_routers_callbacks
-from command_menu_admin import router as command_menu_admin_router
-from command_menu_student import router as student_menu_router
-from bot_instance import bot, dp
-from deadline import setup_monitoring
-from google_table import setup_google_polling_loop, google_client
-import database as db
-from lives_limiter import LifeCheckMiddleware
-
+from pathlib import Path
+from app.bot.handlers import setup_handlers_router
+from app.bot.bot_instance import bot, dp
+from services.deadline import setup_monitoring
+from app.bot.infrastructure.api.google_table import setup_google_polling_loop, google_client
+from app.bot.middlewares.lives_limiter import LifeCheckMiddleware
+import app.bot.infrastructure.database as db
 
 
 async def main() -> None:
-    setup_routers(dp)
-    setup_routers_callbacks(dp)
+    setup_handlers_router(dp)
     dp.message.middleware(LifeCheckMiddleware())
     dp.callback_query.middleware(LifeCheckMiddleware())
-    dp.include_router(command_menu_admin_router)
-    dp.include_router(student_menu_router)
-    await db.create_db()
-    await db.create_course('Тестовый')
-    course_id = await db.get_course_id('Тестовый')
-    await db.add_users(['itimchuck'], course_id)
-    await db.add_users(['po1eena'], course_id)
+    BASE_DIR = Path(__file__).resolve().parent
+    db_path = BASE_DIR / 'data' / 'educated_platform.db'
+    await db.init_db.init_db(str(db_path))
+    await db.courses.create_course('Тестовый')
+    course_id = await db.courses.get_course_id('Тестовый')
+    await db.users.add_users(['itimchuck'], course_id)
+    await db.users.add_users(['po1eena'], course_id)
     monitor_task = create_task(setup_monitoring())
     create_task(setup_google_polling_loop(google_client))
-    task_id = await db.add_task('Задание 16', course_id, True,
+    task_id = await db.tasks.add_task('Задание 16', course_id, True,
                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
                                 'https://drive.google.com/drive/u/0/folders/1lBvGtrV48Ad6kNhdpag2G9op6Nvy-Zin',
                                 '2025-04-29')
-    await db.add_exercise(task_id,
+    await db.tasks.add_exercise(task_id,
                           'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',
                           '12')
-    await db.add_exercise(task_id,
+    await db.tasks.add_exercise(task_id,
                           'Сеть, в которой содержится узел с IP-адресом 192.214.A.184, задана маской сети 255.255.255.224, где A - некоторое допустимое для записи IP-адреса число. Определите минимальное значение A, для которого для всех IP-адресов этой сети в двоичной записи IP-адреса суммарное количество единиц будет больше 15.',
                           '43')
-    await db.add_exercise(task_id,
+    await db.tasks.add_exercise(task_id,
                           '''В снежном королевстве существовала особая сеть, которая имела свой уникальный IP-адрес и маску.
 Однажды, Снежная Королева решила провести эксперимент, чтобы выяснить, сколько IP-адресов в её королевстве соответствуют определённому правилу. Она знала, что сеть ее королевства задается следующими данными:
 IP-адрес сети: 192.168.248.176

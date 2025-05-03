@@ -1,47 +1,16 @@
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InputMediaVideo, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InputMediaVideo, Message
 from aiogram import Router, F
 from datetime import datetime
 
-from bot_instance import bot
-import state as st
+from app.bot.bot_instance import bot
+import app.bot.states.state as st
 
-import database as db
-import keyboard as kb
+import app.bot.infrastructure.database as db
+import app.bot.keyboards.command_menu_student as kb
 
 router = Router()
-
-
-@router.callback_query(F.data == 'send_abstract')
-async def send_abstract(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    task_data = (await state.get_data())['task_data']
-    sent_message = await callback_query.message.answer_document(document=task_data['abstract_id'])
-    await state.update_data(message_abstract_id=sent_message.message_id)
-    current_keyboard = callback_query.message.reply_markup.inline_keyboard
-    new_keyboard = [
-        [button for button in row if button.callback_data != 'send_abstract']
-        for row in current_keyboard
-    ]
-    await callback_query.message.edit_reply_markup(
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=new_keyboard)
-    )
-
-
-@router.callback_query(F.data == 'send_file_work')
-async def backing_to_task(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    file_id = await state.get_value('file_work_id')
-    sent_message = await callback_query.message.answer_document(document=file_id)
-    await state.update_data(message_file_work_id=sent_message.message_id)
-    current_keyboard = callback_query.message.reply_markup.inline_keyboard
-    new_keyboard = [
-        [button for button in row if button.callback_data != 'send_file_work']
-        for row in current_keyboard
-    ]
-    await callback_query.message.edit_reply_markup(
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=new_keyboard)
-    )
 
 
 @router.callback_query(lambda c: c.data.startswith('next_exercise') or c.data.startswith('prev_exercise')
@@ -72,6 +41,43 @@ async def mapping_exercise(callback_query: CallbackQuery, state: FSMContext):
         current_exercise=current_exercise,
         current_text=current_message.text,
         current_message_id=current_message.message_id)
+
+
+@router.message(st.MappingExercise.solving_homework)
+async def record_answer(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    quantity_exercise = state_data['quantity_exercise']
+    current_exercise = state_data['current_exercise']
+    condition, right_answer, exercise_id = state_data['homework'][current_exercise]
+    message_id = state_data['homework_message_id']
+    input_answer = message.text
+    result_answer = (right_answer == input_answer)
+    status_input_answer = '✅' if result_answer else '❌'
+    text_message = f'{condition}\nТвой ответ: {input_answer} {status_input_answer}'
+    answers = state_data.get('results', {})
+    file_work = state_data['task_data'].get('file_work')
+    prev_status = answers.get(current_exercise, {}).get('status_input_answer')
+    quantity_right_answers = state_data.get('quantity_right_answers', 0)
+    if prev_status is None:
+        if result_answer:
+            quantity_right_answers += 1
+    else:
+        if prev_status == '❌' and result_answer:
+            quantity_right_answers += 1
+        elif prev_status == '✅' and not result_answer:
+            quantity_right_answers -= 1
+    answers[current_exercise] = {'input_answer': input_answer, 'status_input_answer': status_input_answer}
+    await state.update_data(results=answers, quantity_right_answers=quantity_right_answers)
+    await message.delete()
+    try:
+        await message.bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=message_id,
+            text=text_message,
+            reply_markup=await kb.mapping_homework(quantity_exercise, current_exercise, bool(file_work))
+        )
+    except TelegramBadRequest:
+        pass
 
 
 @router.callback_query(F.data == 'get_file_work')
@@ -134,7 +140,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     session_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     quotient = int((state_data.get('quantity_right_answers', 0) / state_data['quantity_exercise']) * 100)
     is_completed = quotient >= 90
-    await db.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
+    await db.sessions.add_progress_user(callback_query.from_user.id, task_data['task_id'], state_data['homework'],
                                state_data.get('results', {}), state_data['session_start'], session_end, file_work_id,
                                is_completed)
     await state.update_data(session_end=session_end)

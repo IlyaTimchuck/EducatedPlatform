@@ -8,9 +8,9 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from gspread.utils import rowcol_to_a1
 
-from bot_instance import bot
-import database as db
-import keyboard as kb
+from app.bot.bot_instance import bot
+import app.bot.infrastructure.database as db
+import app.bot.keyboards as kb
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -171,7 +171,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                                     f"Вы действительно хотите удалить пользователя @{username} "
                                     f"и все его данные?"
                                 ),
-                                reply_markup=await kb.confirm_deleting_user(uid)
+                                reply_markup=await kb.admin_keyboards.manage_students.confirm_deleting_user(uid)
                             )
 
                         # 2) изменение жизней
@@ -179,7 +179,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                             lives_str = row_dict.get('lives', '0').strip()
                             new_lives = int(lives_str[0]) if lives_str and lives_str[0].isdigit() else 0
                             logger.info(f"Updating lives for user {uid}: {new_lives}")
-                            await db.update_lives_for_user(uid, new_lives)
+                            await db.deadlines.update_lives_for_user(uid, new_lives)
                             col_lives = normalized_users.index('lives') + 1
                             await ws_users.update_cell(i, col_lives, f'{new_lives}❤️')
                             col_upd = normalized_users.index('update_time') + 1
@@ -208,7 +208,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                             deadline = row_dict.get('deadline', '').strip()
 
                             logger.info(f"Updating deadline for {uid}, task {tid}: {deadline}")
-                            await db.change_deadline(uid, tid, deadline)
+                            await db.deadlines.change_deadline(uid, tid, deadline)
                             col_upd = normalized_dead.index('update_time') + 1
                             await ws_dead.update_cell(j, col_upd, '-')
 

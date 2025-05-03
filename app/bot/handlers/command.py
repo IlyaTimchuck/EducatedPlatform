@@ -4,10 +4,9 @@ from aiogram.filters import Command
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
-from bot_instance import bot
-import state as st
-import database as db
-import keyboard as kb
+from app.bot.bot_instance import bot
+import app.bot.states.state as st
+import app.bot.keyboards as kb
 
 router = Router()
 
@@ -55,7 +54,7 @@ async def command_menu(update: Union[Message, CallbackQuery], state: FSMContext)
     elif session_start and not session_end:
         await bot.delete_message(chat_id=user_id, message_id=state_data['homework_message_id'])
 
-    text_message, keyboard = await kb.send_command_menu(user_id)
+    text_message, keyboard = await kb.main_menu.send_command_menu(user_id)
     new_command_menu_id = await bot.send_message(text=text_message, chat_id=user_id, reply_markup=keyboard)
     await state.clear()
     await state.set_state(st.MappingExercise.mapping_command_menu)
@@ -65,7 +64,7 @@ async def command_menu(update: Union[Message, CallbackQuery], state: FSMContext)
 @router.callback_query(lambda call: call.data in ['back_student', 'back_admin'])
 async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
-    text_message, keyboard = await kb.send_command_menu(callback_query.from_user.id)
+    text_message, keyboard = await kb.main_menu.send_command_menu(callback_query.from_user.id)
     state_data = await state.get_data()
     abstract = state_data.get('message_abstract_id')
     if abstract:

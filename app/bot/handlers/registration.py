@@ -5,11 +5,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router
 from timezonefinder import TimezoneFinder
 from geopy.geocoders import Nominatim
-import state as st
-import database as db
-import keyboard as kb
-import utils
-from google_table import google_client
+import app.bot.states.state as st
+import app.bot.infrastructure.database as db
+import app.bot.keyboards as kb
+from app.bot.infrastructure.api.google_table import google_client
+from app.bot.bot_instance import bot
 
 router = Router()
 
@@ -23,7 +23,7 @@ async def getting_name_user(message: Message, state: FSMContext):
         name_user = f'{name_user_split[0][0].upper()}{name_user_split[0][1:].lower()} {name_user_split[1][0].upper()}{name_user_split[1][1:].lower()}'
         sent_message = await message.answer(
             'Теперь отправь мне свою локацию или название ближайшего большого города. Это нужно для корректного отображения дедлайнов',
-            reply_markup=kb.location_button)
+            reply_markup=kb.command_menu_student.location_button)
         reg_msg_for_deletion += [sent_message.message_id]
         reg_msg_for_deletion += [message.message_id]
         await state.update_data(real_name=name_user, reg_msg_for_deletion=reg_msg_for_deletion)
@@ -72,13 +72,17 @@ async def registration_user(message: Message, state: FSMContext):
     role = 'student' if message.from_user.id != 795508218 else 'admin'
     real_name_user = state_data['real_name']
     # Регистрируем пользователя в базе данных
-    course_user = await db.registration_user(real_name_user, message.from_user.username, message.from_user.id,
+    course_user = await db.users.registration_user(real_name_user, message.from_user.username, message.from_user.id,
                                              timezone_name, role)
     if course_user:
         date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        text_message, keyboard = await kb.send_command_menu(message.from_user.id)
+        text_message, keyboard = await kb.main_menu.send_command_menu(message.from_user.id)
         text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
-        await utils.del_messages(message.from_user.id, reg_msg_for_deletion)
+        for message_id in reg_msg_for_deletion:
+            try:
+                await bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+            except Exception as e:
+                print(e)
         message_menu = await message.answer(text_message, reply_markup=keyboard)
         await google_client.add_user_in_table(real_name_user, message.from_user.username, course_user[1],
                                               message.from_user.id,

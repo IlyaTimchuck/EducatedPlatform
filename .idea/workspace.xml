@@ -4,17 +4,67 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="добавлен контроль успеваемости учеников для админского аккаунта. добавлены метрики пользователей. доабвлена кнопка вернуться назад в решении домашней работы и кнопка назад в списке уроков. отредактированы функции в базе данных по получению текущих дедлайнов (теперь учитываются changed_deadline), исправлена функция актауализации жизней в гугл таблице">
-      <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)">
+      <change afterPath="$PROJECT_DIR$/app/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/bot_instance.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/admin/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/admin/add_users.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/admin/calendar.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/admin/deletion_user.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/command.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/registration.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/student/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/api/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/blocks.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/metrics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/sessions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/users.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/create_task_keyboards.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/command_menu_student.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/middlewares/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/middlewares/lives_limiter.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/middlewares/registration_check.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/states/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/bot/states/state.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/deadline.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bot_instance.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot_instance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/callbacks/learning.py" beforeDir="false" afterPath="$PROJECT_DIR$/callbacks/learning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/command_menu_student.py" beforeDir="false" afterPath="$PROJECT_DIR$/command_menu_student.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/recording_answers.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/recording_answers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboard.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bot_instance.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/callbacks/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/callbacks/create_task.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/callbacks/learning.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/command_menu_admin.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/command_menu_student.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deadline.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/google_table.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/command.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/recording_answers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/keyboard.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lives_limiter.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/registration.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/state.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -295,7 +345,15 @@
       <option name="project" value="LOCAL" />
       <updated>1745579874638</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)">
+      <option name="closed" value="true" />
+      <created>1746170724714</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1746170724714</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -311,6 +369,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="реализовано полное ограничение доступа к курсу в случае, если у пользователя полностью закончились жизни. если жизни появляются доступ восстанавливается" />
-    <option name="LAST_COMMIT_MESSAGE" value="реализовано полное ограничение доступа к курсу в случае, если у пользователя полностью закончились жизни. если жизни появляются доступ восстанавливается" />
+    <MESSAGE value="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)" />
+    <option name="LAST_COMMIT_MESSAGE" value="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)" />
   </component>
 </project>

@@ -3,23 +3,16 @@ from aiogram.fsm.storage.base import StorageKey
 from aiogram.types import CallbackQuery, Message
 from aiogram import Router, F
 from datetime import datetime
-from bot_instance import bot, dp
-from google_table import google_client
+from app.bot.bot_instance import bot, dp
+from app.bot.infrastructure.api.google_table import google_client
+from app.bot.keyboards.command_menu_student import start_the_task_from_the_reminder
 
 import calendar
-import state as st
-import database as db
-import keyboard as kb
+import app.bot.states.state as st
+import app.bot.infrastructure.database as db
+import app.bot.keyboards.admin_keyboards.create_task_keyboards as kb
 
 router = Router()
-
-
-@router.callback_query(F.data == 'add_users')
-async def process_add_users(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.answer()
-    await callback_query.message.answer('Выбери курс', reply_markup=await kb.choose_course_reply())
-    await state.set_state(st.AddUsers.choose_course)
-
 
 @router.callback_query(F.data == 'add_lesson')
 async def process_add_lesson(callback_query: CallbackQuery):
@@ -33,7 +26,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     await callback_query.answer()
     await state.set_state(st.AddTask.choose_course)
     course_id = int(callback_query.data.split(":")[-1])
-    current_block = await db.get_blocks(course_id, current=True)
+    current_block = await db.blocks.get_blocks(course_id, current=True)
     await state.update_data(course_id=course_id, current_block=current_block)
     await callback_query.message.edit_text(
         f'Выбери блок\n\nТекущий выбор: {current_block} блок',
@@ -55,7 +48,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     elif action == 'confirm_block':
         state_data = await state.get_data()
         course_id = state_data['course_id']
-        block_id = await db.check_block_exists(course_id, selected_block)
+        block_id = await db.blocks.check_block_exists(course_id, selected_block)
         await state.update_data(selected_block=selected_block)
         if block_id:
             year = datetime.now().year
@@ -85,32 +78,12 @@ async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
     elif action == 'confirm_new_block':
         year = datetime.now().year
         month = datetime.now().month
-        block_id = await db.create_block(state_data['course_id'], state_data['selected_block'])
-        await db.update_lives_with_new_block(state_data['course_id'])
+        block_id = await db.blocks.create_block(state_data['course_id'], state_data['selected_block'])
+        await db.blocks.update_lives_with_new_block(state_data['course_id'])
         await state.update_data(block_id=block_id)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',
                                                reply_markup=await kb.generate_calendar(year, month))
-
-
-@router.callback_query(lambda c: c.data.startswith('prev_month') or c.data.startswith('next_month'))
-async def month(callback_query: CallbackQuery):
-    action, year, month = callback_query.data.split(":")
-    year, month = int(year), int(month)
-    if action == "prev_month":
-        if month == 1:
-            year -= 1
-            month = 12
-        else:
-            month -= 1
-    elif action == "next_month":
-        if month == 12:
-            year += 1
-            month = 1
-        else:
-            month += 1
-    new_markup = await kb.generate_calendar(year, month)
-    await callback_query.message.edit_reply_markup(reply_markup=new_markup)
 
 
 @router.callback_query(lambda c: c.data.startswith("select_day"))
@@ -158,34 +131,6 @@ async def process_finish_task(callback_query: CallbackQuery, state: FSMContext):
         await state.set_state(st.AddTask.get_task_title)
 
 
-@router.message(st.AddUsers.choose_course)
-async def process_choose_course(message: Message, state: FSMContext):
-    if message.text == 'Создать новый':
-        await message.answer('Отправь мне название курса')
-        await state.set_state(st.AddUsers.get_course_tittle)
-    else:
-        await state.update_data(course_tittle=message.text)
-        await message.answer('Отправь мне список пользователей')
-        await state.set_state(st.AddUsers.get_list_users)
-
-
-@router.message(st.AddUsers.get_course_tittle)
-async def process_get_course_tittle(message: Message, state: FSMContext):
-    await state.update_data(course_tittle=message.text)
-    await db.create_course(message.text)
-    await message.answer('Отправь мне список пользователей')
-    await state.set_state(st.AddUsers.get_list_users)
-
-
-@router.message(st.AddUsers.get_list_users)
-async def process_get_list_users(message: Message, state: FSMContext):
-    list_users = message.text.split('\n')
-    data = await state.get_data()
-    course_id = await db.get_course_id(data['course_tittle'])
-    await db.add_users(list_users, course_id)
-    _, keyboard = await kb.send_command_menu(message.from_user.id)
-    await message.answer('Пользователи были успешно добавлены', reply_markup=keyboard)
-
 
 @router.message(st.AddTask.get_task_title)
 async def process_get_task_title(message: Message, state: FSMContext):
@@ -226,16 +171,16 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     await callback_query.answer()
     state_data = await state.get_data()
     link_files = state_data.get('link_files', None)
-    task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['file_work'],
+    task_id = await db.tasks.add_task(state_data['task_title'], state_data['block_id'], state_data['file_work'],
                                 state_data['video_id'], state_data['abstract_id'], link_files,
                                 state_data['deadline'])
     exercises = await google_client.get_exercise()
     for exercise in exercises:
         exercise_condition = exercise[0]
         exercise_answer = exercise[1]
-        await db.add_exercise(task_id, exercise_condition, exercise_answer)
+        await db.tasks.add_exercise(task_id, exercise_condition, exercise_answer)
 
-    users_by_course = await db.get_users_by_course(state_data['course_id'])
+    users_by_course = await db.users.get_users_by_course(state_data['course_id'])
     data_in_table = []
     for user_data in users_by_course:
         user_id = user_data['user_id']
@@ -245,7 +190,7 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
                               '-'])
         notification_about_new_task = await bot.send_message(chat_id=user_id,
                                                              text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему жми на кнопку!',
-                                                             reply_markup=await kb.start_the_task_from_the_reminder(
+                                                             reply_markup=await start_the_task_from_the_reminder(
                                                                  state_data['course_id'],
                                                                  task_id))
         storage_key = StorageKey(bot_id=bot.id, chat_id=user_id, user_id=user_id)
