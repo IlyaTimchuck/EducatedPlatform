@@ -28,7 +28,8 @@ async def mapping_list_tasks(user_id: int, block_id: int) -> InlineKeyboardMarku
     return builder.as_markup()
 
 
-async def mapping_task(block_id, abstract_retrieved: bool = False, file_work: bool = False) -> InlineKeyboardMarkup:
+async def mapping_task(block_id, file_work_info: dict[bool:bool],
+                       abstract_retrieved: bool = False) -> InlineKeyboardMarkup:
     keyboard_buttons = [
         [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]
     ]
@@ -36,7 +37,7 @@ async def mapping_task(block_id, abstract_retrieved: bool = False, file_work: bo
         keyboard_buttons.append(
             [InlineKeyboardButton(text='Конспект урока', callback_data='send_abstract')]
         )
-    if file_work:
+    if file_work_info['file_work'] and (not file_work_info['file_work_retrieved']):
         keyboard_buttons.append(
             [InlineKeyboardButton(text='Получить свой рабочий файл', callback_data='send_file_work')]
         )

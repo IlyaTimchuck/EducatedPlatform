@@ -76,12 +76,15 @@ async def open_tasks_list(callback_query: CallbackQuery, state: FSMContext):
         command_menu_id = state_data['command_menu_id']
         abstract_message = state_data.get('message_abstract_id')
         homework_message = state_data.get('homework_message_id')
+        message_file_work_id = state_data.get('message_file_work_id')
         if abstract_message:
             await callback_query.message.bot.delete_message(chat_id=callback_query.from_user.id,
                                                             message_id=abstract_message)
         if homework_message:
             await callback_query.message.bot.delete_message(chat_id=callback_query.from_user.id,
                                                             message_id=homework_message)
+        if message_file_work_id:
+            await bot.delete_message(chat_id=user_id, message_id=message_file_work_id)
         await callback_query.message.bot.delete_message(chat_id=callback_query.from_user.id, message_id=command_menu_id)
         command_menu = await callback_query.message.answer('Список занятий:',
                                                            reply_markup=await kb.command_menu_student.mapping_list_tasks(
@@ -147,7 +150,10 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
         quotient = int((right_answers / quantity_exercise) * 100)
         text_message += f"\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}"
         await state.update_data(quantity_right_answers=right_answers, quantity_exercise=quantity_exercise)
-    file_work = task_data.get('file_work', None)
+    file_work = task_data.get('file_work')
+    file_work_id = session.get('file_work_id')
+    message_file_work_id = state_data.get('message_file_work_id')
+    file_work_info = {'file_work': bool(file_work_id), 'file_work_retrieved': bool(message_file_work_id)}
     link_files = task_data.get('link_files', None)
     if file_work:
         text_message += '\n❗Чтобы завершить эту домшнюю работу, нужно будет отправить файл с решениями'
@@ -158,15 +164,16 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=await kb.command_menu_student.mapping_task(task_data['block_id'],
-                                                                message_abstract_id, bool(session.get('file_work_id')))
-    )
+        reply_markup=await kb.command_menu_student.mapping_task(task_data['block_id'], file_work_info,
+                                                                message_abstract_id))
+
     new_state_data = {
         'task_data': task_data,
         'task_message_id': sent_message.message_id
     }
-    if file_work:
-        new_state_data['file_work_id'] = file_work
+    file_work_id = session.get('file_work_id')
+    if file_work_id:
+        new_state_data['file_work_id'] = file_work_id
     await state.update_data(**new_state_data)
 
 
@@ -240,7 +247,7 @@ async def opening_list_exercises(callback_query: CallbackQuery, state: FSMContex
     state_data = await state.get_data()
     await callback_query.message.edit_text(text='Выбери задание',
                                            reply_markup=await kb.command_menu_student.mapping_list_exercises(state_data,
-                                                                                        'results' in state_data))
+                                                                                                             'results' in state_data))
 
 
 @router.callback_query(F.data == 'back_to_task')
@@ -248,9 +255,13 @@ async def backing_to_task(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     state_data = await state.get_data()
     message_abstract_id = state_data.get('message_abstract_id')
+    file_work_id = state_data.get('file_work_id')
+    message_file_work_id = state_data.get('message_file_work_id')
+    file_work_info = {'file_work': bool(file_work_id), 'file_work_retrieved': bool(message_file_work_id)}
     await bot.delete_message(chat_id=callback_query.from_user.id, message_id=state_data['homework_message_id'])
     state_data.pop('homework_message_id')
     await state.set_data(state_data)
     await bot.edit_message_reply_markup(chat_id=callback_query.from_user.id, message_id=state_data['command_menu_id'],
-                                        reply_markup=await kb.command_menu_student.mapping_task(state_data['task_data']['block_id'],
-                                                                           message_abstract_id))
+                                        reply_markup=await kb.command_menu_student.mapping_task(
+                                            state_data['task_data']['block_id'], file_work_info,
+                                            bool(message_abstract_id)))

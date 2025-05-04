@@ -127,7 +127,9 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     task_data = state_data['task_data']
     messages_getting_file_work = state_data.get('messages_getting_file_work')
-    file_work_id = state_data.get('file_work_id', '')
+    file_work_id = state_data.get('file_work_id')
+    message_file_work_id = state_data.get('message_file_work_id')
+    file_work_info = {'file_work': bool(file_work_id), 'file_work_retrieved': bool(message_file_work_id)}
     if messages_getting_file_work:
         # удаляем homework_message + сообщения от заверешения homework
         for message_id in messages_getting_file_work:
@@ -160,8 +162,8 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),
-        reply_markup=await kb.mapping_task(task_data['block_id'],
-                                           bool(message_abstract_id), bool(file_work_id))
+        reply_markup=await kb.mapping_task(task_data['block_id'], file_work_info,
+                                           bool(message_abstract_id))
     )
 
 

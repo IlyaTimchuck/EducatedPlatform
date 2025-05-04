@@ -33,13 +33,14 @@ async def command_menu(update: Union[Message, CallbackQuery], state: FSMContext)
         state_data.pop('block_message_id')
         await update.answer('Блокировка была снята!',
                             show_alert=True)
-    message_menu_id = state_data.get('command_menu_id', None)
-    message_abstract_id = state_data.get('message_abstract_id', None)
-    session_start = state_data.get('session_start', None)
-    session_end = state_data.get('session_end', None)
-    reminder_message_id = state_data.get('reminder_message_id', None)
-    notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id', None)
+    message_menu_id = state_data.get('command_menu_id')
+    message_abstract_id = state_data.get('message_abstract_id')
+    session_start = state_data.get('session_start')
+    session_end = state_data.get('session_end')
+    reminder_message_id = state_data.get('reminder_message_id')
+    notification_about_new_task_message_id = state_data.get('notification_about_new_task_message_id')
     messages_getting_file_work = state_data.get('messages_getting_file_work')
+    file_work_message_id = state_data.get('message_file_work_id')
     if message_menu_id:
         await bot.delete_message(chat_id=user_id, message_id=message_menu_id)
     if message_abstract_id:
@@ -51,6 +52,8 @@ async def command_menu(update: Union[Message, CallbackQuery], state: FSMContext)
     if messages_getting_file_work:
         for message_id in messages_getting_file_work:
             await bot.delete_message(chat_id=user_id, message_id=message_id)
+    if file_work_message_id:
+        await bot.delete_message(chat_id=user_id, message_id=file_work_message_id)
     elif session_start and not session_end:
         await bot.delete_message(chat_id=user_id, message_id=state_data['homework_message_id'])
 
@@ -67,10 +70,14 @@ async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
     text_message, keyboard = await kb.main_menu.send_command_menu(callback_query.from_user.id)
     state_data = await state.get_data()
     abstract = state_data.get('message_abstract_id')
+    file_work_message_id = state_data.get('message_file_work_id')
     if abstract:
         await callback_query.message.bot.delete_message(chat_id=callback_query.message.chat.id, message_id=abstract)
         state_data.pop('message_abstract_id')
-        await state.set_data(state_data)
+    if file_work_message_id:
+        await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=file_work_message_id)
+        state_data.pop('message_file_work_id')
+    await state.set_data(state_data)
     try:
         await callback_query.message.edit_text(
             text=text_message,
@@ -82,7 +89,7 @@ async def process_back_button(callback_query: CallbackQuery, state: FSMContext):
         try:
             await callback_query.message.delete()
         except TelegramBadRequest:
-            pass  # Если сообщение уже удалено
+            pass
 
         sent_command_menu = await callback_query.message.answer(
             text=text_message,

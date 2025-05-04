@@ -5,6 +5,7 @@ from app.bot.bot_instance import bot, dp
 from services.deadline import setup_monitoring
 from app.bot.infrastructure.api.google_table import setup_google_polling_loop, google_client
 from app.bot.middlewares.lives_limiter import LifeCheckMiddleware
+from app.bot.handlers.error_handler import global_error_handler
 import app.bot.infrastructure.database as db
 
 
