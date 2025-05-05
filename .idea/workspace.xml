@@ -4,21 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)">
-      <change afterPath="$PROJECT_DIR$/app/bot/handlers/error_handler.py" afterDir="false" />
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="сделан полный переход на новую структуру проекта. база данных переведена на один глобальный коннект. добавлена кнопка получения рабочего файла если пользователь до этого его отправлял.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/command.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/command.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/sessions.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/sessions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/error_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/error_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/registration.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/registration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/users.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/keyboards/command_menu_student.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/command_menu_student.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/middlewares/registration_check.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -308,7 +302,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746170724714</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="сделан полный переход на новую структуру проекта. база данных переведена на один глобальный коннект. добавлена кнопка получения рабочего файла если пользователь до этого его отправлял.">
+      <option name="closed" value="true" />
+      <created>1746372535854</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1746372535854</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -325,6 +327,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="реализовано полное ограничение доступа к курсу в случае, если у пользователя полностью закончились жизни. если жизни появляются доступ восстанавливается" />
     <MESSAGE value="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)" />
-    <option name="LAST_COMMIT_MESSAGE" value="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)" />
+    <MESSAGE value="сделан полный переход на новую структуру проекта. база данных переведена на один глобальный коннект. добавлена кнопка получения рабочего файла если пользователь до этого его отправлял." />
+    <option name="LAST_COMMIT_MESSAGE" value="сделан полный переход на новую структуру проекта. база данных переведена на один глобальный коннект. добавлена кнопка получения рабочего файла если пользователь до этого его отправлял." />
   </component>
 </project>

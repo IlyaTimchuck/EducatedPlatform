@@ -42,8 +42,8 @@ async def mapping_task(block_id, file_work_info: dict[bool:bool],
             [InlineKeyboardButton(text='Получить свой рабочий файл', callback_data='send_file_work')]
         )
     keyboard_buttons.append([
-        InlineKeyboardButton(text='Назад ↩️', callback_data=f'open_block_from_homework:{block_id}'),
-        InlineKeyboardButton(text='В главное меню', callback_data='back_student')
+        InlineKeyboardButton(text='↩️ Назад', callback_data=f'open_block_from_homework:{block_id}'),
+        InlineKeyboardButton(text='В главное меню 🏠', callback_data='back_student')
     ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
@@ -69,10 +69,10 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
         builder.adjust(3)
     if file_work:
         builder.row(
-            *[InlineKeyboardButton(text='Сохранить ответы и перейти к отправке файла', callback_data='get_file_work')])
+            *[InlineKeyboardButton(text='Перейти к отправке файла', callback_data='get_file_work')])
     elif not admin_connection:
         builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])
-    builder.row(*[InlineKeyboardButton(text='Вернуться назад ↩️', callback_data='back_to_task')])
+    builder.row(*[InlineKeyboardButton(text='↩️ Вернуться назад', callback_data='back_to_task')])
     return builder.as_markup()
 
 
@@ -115,11 +115,11 @@ async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> Inli
 
 
 back_to_homework = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Вернуться к домашней работе', callback_data='open_homework')]
+    [InlineKeyboardButton(text='↩️ Вернуться к домашней работе', callback_data='open_homework')]
 ])
 
 confirm_completing_work_file = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Вернуться назад', callback_data='open_homework'),
+    [InlineKeyboardButton(text='↩️ Вернуться назад', callback_data='open_homework'),
      InlineKeyboardButton(text='Завершить', callback_data='complete_homework')]
 ])
 
@@ -130,7 +130,7 @@ send_homework_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 
 # ——— ОГРАНИЧЕНИЕ ДОСТУПА ПРИ ОТСУТСВИИ life ———
 block_button = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Попробовать еще раз', callback_data='attempt_to_log_in')]
+    [InlineKeyboardButton(text='Попробовать еще раз 🔁', callback_data='attempt_to_log_in')]
 ])
 
 # ——— ЗАПРОС ГЕОЛОКАЦИИ ПРИ РЕГИСТРАЦИИ———

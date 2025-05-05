@@ -71,29 +71,41 @@ async def registration_user(message: Message, state: FSMContext):
         return
     role = 'student' if message.from_user.id != 795508218 else 'admin'
     real_name_user = state_data['real_name']
-    # Регистрируем пользователя в базе данных
-    course_user = await db.users.registration_user(real_name_user, message.from_user.username, message.from_user.id,
-                                             timezone_name, role)
-    if course_user:
-        date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        text_message, keyboard = await kb.main_menu.send_command_menu(message.from_user.id)
-        text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
+    if role == 'student':
+        # Регистрируем пользователя в базе данных
+        course_user = await db.users.registration_user(real_name_user, message.from_user.username, message.from_user.id,
+                                                 timezone_name, role)
+        if course_user:
+            date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            text_message, keyboard = await kb.main_menu.send_command_menu(message.from_user.id)
+            text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
+            for message_id in reg_msg_for_deletion:
+                try:
+                    await bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+                except Exception as e:
+                    print(e)
+            message_menu = await message.answer(text_message, reply_markup=keyboard)
+            await google_client.add_user_in_table(real_name_user, message.from_user.username, course_user[1],
+                                                  message.from_user.id,
+                                                  timezone_name, date_of_joining, role, 3)
+            state_data['command_menu_id'] = message_menu.message_id
+            state_data.pop('reg_msg_for_deletion')
+            if role == 'student':
+                await state.set_state(st.MappingExercise.mapping_command_menu)
+                await state.set_data(state_data)
+        else:
+            sent_message_3 = await message.answer(
+                'Ты не был добавлен админом на курс. Тебе нужно обратиться к админу :(')
+            reg_msg_for_deletion += [sent_message_3.message_id]
+            await state.set_state(st.Registration.get_location_user)
+    elif role == 'admin':
+        await db.users.registration_user(real_name_user, message.from_user.username, message.from_user.id,
+                                                 timezone_name, role)
         for message_id in reg_msg_for_deletion:
             try:
                 await bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
             except Exception as e:
                 print(e)
+        text_message, keyboard = await kb.main_menu.send_command_menu(message.from_user.id)
         message_menu = await message.answer(text_message, reply_markup=keyboard)
-        await google_client.add_user_in_table(real_name_user, message.from_user.username, course_user[1],
-                                              message.from_user.id,
-                                              timezone_name, date_of_joining, role, 3)
-        state_data['command_menu_id'] = message_menu.message_id
-        state_data.pop('reg_msg_for_deletion')
-        if role == 'student':
-            await state.set_state(st.MappingExercise.mapping_command_menu)
-            await state.set_data(state_data)
-    else:
-        sent_message_3 = await message.answer(
-            'Ты не был добавлен админом на курс. Тебе нужно обратиться к админу :(')
-        reg_msg_for_deletion += [sent_message_3.message_id]
-        await state.set_state(st.Registration.get_location_user)
+        await state.update_data(command_menu_id=message_menu.message_id)

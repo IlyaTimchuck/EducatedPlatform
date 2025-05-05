@@ -19,34 +19,38 @@ async def add_users(telegram_usernames: list, course_id: int) -> None:
 
 async def registration_user(real_name: str, telegram_username: str, user_id: int, timezone: str, role: str) -> list:
     con = get_db()
-    tz_record = await (await con.execute(
-        "SELECT timezone_id FROM timezones WHERE timezone = ?",
-        (timezone,))).fetchone()
-
-    if not tz_record:
-        await con.execute(
-            "INSERT INTO timezones (timezone) VALUES (?)",
-            (timezone,)
-        )
-        tz_record = await (await con.execute("SELECT last_insert_rowid()")).fetchone()
-
-    timezone_id = tz_record[0]
     date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    lives = 3
-    cursor = await con.execute('''SELECT c.course_id, c.course_title
-                    FROM unregistered un
-                    JOIN courses c ON c.course_id = un.course_id
-                    WHERE un.telegram_username = ?''', (telegram_username,))
-    course_data = (await cursor.fetchall())[0]
-    if course_data:
-        await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                          (real_name, telegram_username, user_id, course_data[0], timezone_id, date_of_joining,
-                           lives, role))
-        await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
-        await con.execute('DELETE FROM unregistered WHERE telegram_username = ?', (telegram_username,))
-        await con.commit()
-    return course_data
+    if role == 'student':
+        tz_record = await (await con.execute(
+            "SELECT timezone_id FROM timezones WHERE timezone = ?",
+            (timezone,))).fetchone()
 
+        if not tz_record:
+            await con.execute(
+                "INSERT INTO timezones (timezone) VALUES (?)",
+                (timezone,)
+            )
+            tz_record = await (await con.execute("SELECT last_insert_rowid()")).fetchone()
+
+        timezone_id = tz_record[0]
+        lives = 3
+        cursor = await con.execute('''SELECT c.course_id, c.course_title
+                        FROM unregistered un
+                        JOIN courses c ON c.course_id = un.course_id
+                        WHERE un.telegram_username = ?''', (telegram_username,))
+        course_data = (await cursor.fetchall())[0]
+        if course_data:
+            await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                              (real_name, telegram_username, user_id, course_data[0], timezone_id, date_of_joining,
+                               lives, role))
+            await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', (user_id, None, None, '+3'))
+            await con.execute('DELETE FROM unregistered WHERE telegram_username = ?', (telegram_username,))
+        return course_data
+    elif role == 'admin':
+        await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                          (real_name, telegram_username, user_id, None, None, date_of_joining, None, role))
+        await con.execute('DELETE FROM unregistered WHERE telegram_username = ?', (telegram_username,))
+    await con.commit()
 
 async def delete_all_user_data(user_id: int) -> None:
     con = get_db()
@@ -79,7 +83,7 @@ async def get_data_user(user_id: int) -> dict:
     con.row_factory = aiosqlite.Row
     async with con.cursor() as cursor:
         await cursor.execute('''SELECT * FROM users u 
-                                    JOIN timezones t ON t.timezone_id = u.timezone_id
+                                    LEFT JOIN timezones t ON t.timezone_id = u.timezone_id
                                     WHERE u.user_id = ?''', (user_id,))
         row = await cursor.fetchone()
         if row:

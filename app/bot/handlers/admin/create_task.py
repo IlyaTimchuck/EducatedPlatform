@@ -189,7 +189,7 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
                               state_data['task_title'], deadline, user_data['timezone'], task_id, user_id,
                               '-'])
         notification_about_new_task = await bot.send_message(chat_id=user_id,
-                                                             text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему жми на кнопку!',
+                                                             text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему, жми на кнопку!',
                                                              reply_markup=await start_the_task_from_the_reminder(
                                                                  state_data['course_id'],
                                                                  task_id))
@@ -197,3 +197,4 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
         state = FSMContext(storage=dp.storage, key=storage_key)
         await state.update_data(notification_about_new_task_message_id=notification_about_new_task.message_id)
     await google_client.add_deadlines_in_table(data_in_table)
+    await callback_query.message.edit_text(text='Урок был успешно загружен')
