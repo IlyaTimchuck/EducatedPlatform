@@ -38,7 +38,8 @@ async def registration_user(real_name: str, telegram_username: str, user_id: int
                         FROM unregistered un
                         JOIN courses c ON c.course_id = un.course_id
                         WHERE un.telegram_username = ?''', (telegram_username,))
-        course_data = (await cursor.fetchall())[0]
+        result = (await cursor.fetchall())
+        course_data = result[0] if result else None
         if course_data:
             await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                               (real_name, telegram_username, user_id, course_data[0], timezone_id, date_of_joining,
@@ -51,6 +52,7 @@ async def registration_user(real_name: str, telegram_username: str, user_id: int
                           (real_name, telegram_username, user_id, None, None, date_of_joining, None, role))
         await con.execute('DELETE FROM unregistered WHERE telegram_username = ?', (telegram_username,))
     await con.commit()
+
 
 async def delete_all_user_data(user_id: int) -> None:
     con = get_db()
@@ -73,9 +75,10 @@ async def get_users_by_course(course_id: int) -> list:
 
 async def get_lives_user(user_id: int) -> int:
     con = get_db()
-    cursor = await con.execute('SELECT lives FROM users WHERE user_id = ?', (user_id,))
+    cursor = await con.execute('SELECT lives FROM users WHERE user_id = ? AND role = ?', (user_id, 'student'))
     lives = await cursor.fetchone()
-    return int(lives[0]) if lives else 0
+    # Возвращаем количество жизней, если пользователь был найден. Иначе возвращаем 3 (пользователь - админ)
+    return int(lives[0]) if lives else 3
 
 
 async def get_data_user(user_id: int) -> dict:

@@ -90,7 +90,7 @@ class GoogleSheetsClient:
     async def add_deadlines_in_table(self, data: list[list]) -> None:
         await self._ensure_authorized('add_deadlines_in_table')
         ws = await self.spreadsheet.worksheet('deadlines')
-        await ws.append_rows(data)
+        await ws.append_rows(data, value_input_option='USER_ENTERED')
 
     async def check_for_updates(self) -> bool:
         await self._ensure_authorized('check_for_updates')

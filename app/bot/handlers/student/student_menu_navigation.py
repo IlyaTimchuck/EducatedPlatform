@@ -113,15 +113,21 @@ async def open_tasks_list(callback_query: CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda c: c.data.startswith('open_task'))
 async def open_task(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.answer()
     await state.set_state(st.MappingExercise.mapping_task)
     state_data = await state.get_data()
     user_id = state_data.get('user_id', callback_query.from_user.id)
     if callback_query.data == 'open_task':
         last_task = await db.tasks.get_last_task(user_id)
-        course_id, block_id, task_id = last_task.values()
-        await state.update_data(course_id=course_id, block_id=block_id, task_id=task_id)
+        if last_task:
+            await callback_query.answer()
+            course_id, block_id, task_id = last_task.values()
+            await state.update_data(course_id=course_id, block_id=block_id, task_id=task_id)
+        else:
+            await callback_query.answer('На твоем курсе еще нет ни одного задания!')
+            await state.set_state(st.MappingExercise.mapping_command_menu)
+            return
     else:
+        await callback_query.answer()
         callback_data = callback_query.data.split(':')
         if len(callback_data) == 3:
             _, task_id, from_remind = callback_data
@@ -134,7 +140,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
             await state.set_data(state_data)
 
     task_id = int(task_id)
-    task_data = await db.tasks.get_data_task(task_id)
+    task_data = await db.tasks.get_data_task(user_id, task_id)
     date_obj = datetime.strptime(task_data['deadline'], '%Y-%m-%d')
     deadline = date_obj.strftime('%d-%m-%Y')
     text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {deadline}'
@@ -169,7 +175,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
 
     new_state_data = {
         'task_data': task_data,
-        'task_message_id': sent_message.message_id
+        'command_menu_id': sent_message.message_id
     }
     file_work_id = session.get('file_work_id')
     if file_work_id:

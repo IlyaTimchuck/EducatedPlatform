@@ -184,7 +184,7 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
     data_in_table = []
     for user_data in users_by_course:
         user_id = user_data['user_id']
-        deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d').strftime('%Y/%m/%d')
+        deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d').strftime('%Y-%m-%d')
         data_in_table.append([user_data['real_name'], user_data['telegram_username'], user_data['course_title'],
                               state_data['task_title'], deadline, user_data['timezone'], task_id, user_id,
                               '-'])

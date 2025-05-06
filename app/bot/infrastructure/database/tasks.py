@@ -14,13 +14,22 @@ async def add_task(task_title: str, block_id: int, file_work: bool, video_id: st
     return (await task_id.fetchone())[0]
 
 
-async def get_data_task(task_id: int):
+async def get_data_task(user_id: int, task_id: int):
     con = get_db()
     con.row_factory = aiosqlite.Row
-    query = '''SELECT * FROM tasks WHERE task_id = ?'''
-    async with con.execute(query, (task_id,)) as cursor:
-        task_data = await cursor.fetchone()
-        return dict(task_data)
+    query1 = 'SELECT * FROM tasks WHERE task_id = ?'
+    async with con.execute(query1, (task_id,)) as cursor:
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        task_data = dict(row)
+    query2 = 'SELECT deadline FROM changed_deadlines WHERE user_id = ? AND task_id = ?'
+    async with con.execute(query2, (user_id, task_id)) as cursor:
+        row = await cursor.fetchone()
+        changed_deadline = row['deadline'] if row else None
+    if changed_deadline:
+        task_data['deadline'] = changed_deadline
+    return task_data
 
 
 async def add_exercise(task_id: int, exercise_condition: str, exercise_answer=None) -> None:
