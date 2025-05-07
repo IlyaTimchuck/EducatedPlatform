@@ -8,13 +8,14 @@
       <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/add_users.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/add_users.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

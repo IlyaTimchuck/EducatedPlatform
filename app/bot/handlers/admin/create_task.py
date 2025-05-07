@@ -3,6 +3,7 @@ from aiogram.fsm.storage.base import StorageKey
 from aiogram.types import CallbackQuery, Message
 from aiogram import Router, F
 from datetime import datetime
+
 from app.bot.bot_instance import bot, dp
 from app.bot.infrastructure.api.google_table import google_client
 from app.bot.keyboards.command_menu_student import start_the_task_from_the_reminder
@@ -13,6 +14,7 @@ import app.bot.infrastructure.database as db
 import app.bot.keyboards.admin_keyboards.create_task_keyboards as kb
 
 router = Router()
+
 
 @router.callback_query(F.data == 'add_lesson')
 async def process_add_lesson(callback_query: CallbackQuery):
@@ -131,7 +133,6 @@ async def process_finish_task(callback_query: CallbackQuery, state: FSMContext):
         await state.set_state(st.AddTask.get_task_title)
 
 
-
 @router.message(st.AddTask.get_task_title)
 async def process_get_task_title(message: Message, state: FSMContext):
     await state.update_data(task_title=message.text)
@@ -168,33 +169,37 @@ async def process_get_abstract(message: Message, state: FSMContext):
 @router.callback_query(F.data == 'send_exercise')
 async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext):
     """Создаем task. Проверяем, есть ли в задании автопроверка."""
-    await callback_query.answer()
-    state_data = await state.get_data()
-    link_files = state_data.get('link_files', None)
-    task_id = await db.tasks.add_task(state_data['task_title'], state_data['block_id'], state_data['file_work'],
-                                state_data['video_id'], state_data['abstract_id'], link_files,
-                                state_data['deadline'])
     exercises = await google_client.get_exercise()
-    for exercise in exercises:
-        exercise_condition = exercise[0]
-        exercise_answer = exercise[1]
-        await db.tasks.add_exercise(task_id, exercise_condition, exercise_answer)
+    if exercises:
+        await callback_query.answer()
+        state_data = await state.get_data()
+        link_files = state_data.get('link_files', None)
+        task_id = await db.tasks.add_task(state_data['task_title'], state_data['block_id'], state_data['file_work'],
+                                          state_data['video_id'], state_data['abstract_id'], link_files,
+                                          state_data['deadline'])
+        for exercise in exercises:
+            exercise_condition = exercise[0]
+            exercise_answer = exercise[1]
+            await db.tasks.add_exercise(task_id, exercise_condition, exercise_answer)
 
-    users_by_course = await db.users.get_users_by_course(state_data['course_id'])
-    data_in_table = []
-    for user_data in users_by_course:
-        user_id = user_data['user_id']
-        deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d').strftime('%Y-%m-%d')
-        data_in_table.append([user_data['real_name'], user_data['telegram_username'], user_data['course_title'],
-                              state_data['task_title'], deadline, user_data['timezone'], task_id, user_id,
-                              '-'])
-        notification_about_new_task = await bot.send_message(chat_id=user_id,
-                                                             text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему, жми на кнопку!',
-                                                             reply_markup=await start_the_task_from_the_reminder(
-                                                                 state_data['course_id'],
-                                                                 task_id))
-        storage_key = StorageKey(bot_id=bot.id, chat_id=user_id, user_id=user_id)
-        state = FSMContext(storage=dp.storage, key=storage_key)
-        await state.update_data(notification_about_new_task_message_id=notification_about_new_task.message_id)
-    await google_client.add_deadlines_in_table(data_in_table)
-    await callback_query.message.edit_text(text='Урок был успешно загружен')
+        users_by_course = await db.users.get_users_by_course(state_data['course_id'])
+        data_in_table = []
+        for user_data in users_by_course:
+            user_id = user_data['user_id']
+            deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d').strftime('%Y-%m-%d')
+            data_in_table.append([user_data['real_name'], user_data['telegram_username'], user_data['course_title'],
+                                  state_data['task_title'], deadline, user_data['timezone'], task_id, user_id,
+                                  '-'])
+            notification_about_new_task = await bot.send_message(chat_id=user_id,
+                                                                 text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему, жми на кнопку!',
+                                                                 reply_markup=await start_the_task_from_the_reminder(
+                                                                     state_data['course_id'],
+                                                                     task_id))
+            storage_key = StorageKey(bot_id=bot.id, chat_id=user_id, user_id=user_id)
+            state = FSMContext(storage=dp.storage, key=storage_key)
+            await state.update_data(notification_about_new_task_message_id=notification_about_new_task.message_id)
+        await google_client.add_deadlines_in_table(data_in_table)
+        await callback_query.message.edit_text(text='Урок был успешно загружен')
+    else:
+        await callback_query.answer('В таблице не было найдено ни одного задания. Добавь задания и попробуй еще раз',
+                                    show_alert=True)

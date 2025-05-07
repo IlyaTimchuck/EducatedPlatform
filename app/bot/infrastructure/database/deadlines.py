@@ -19,7 +19,7 @@ async def change_deadline(user_id: int, task_id: int, new_date: str) -> None:
     con = get_db()
     await con.execute('''INSERT INTO changed_deadlines VALUES(?, ?, ?)
                          ON CONFLICT(user_id, task_id) DO UPDATE 
-                         SET deadline = excluded.deadline, ''', (user_id, task_id, new_date))
+                         SET deadline = excluded.deadline''', (user_id, task_id, new_date))
     await con.commit()
 
 

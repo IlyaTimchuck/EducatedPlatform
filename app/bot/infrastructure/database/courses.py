@@ -9,6 +9,7 @@ async def create_course(course_title) -> None:
     await con.execute('INSERT INTO blocks (course_id, block_number) VALUES(?, ?)',
                       (course_id, 1))
     await con.commit()
+    return course_id
 
 
 async def get_list_courses() -> list:
@@ -33,3 +34,9 @@ async def get_course_title(course_id: int) -> str:
     cursor = await con.execute('SELECT course_title FROM courses WHERE course_id = ?', (course_id,))
     course_title = (await cursor.fetchone())[0]
     return course_title
+
+
+async def change_course_name(new_course_name: str, course_id: int) -> None:
+    con = get_db()
+    await con.execute('UPDATE courses SET course_name = ? WHERE course_id = ?', (new_course_name, course_id))
+    await con.commit()

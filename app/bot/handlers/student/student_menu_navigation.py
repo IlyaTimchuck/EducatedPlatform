@@ -123,7 +123,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
             course_id, block_id, task_id = last_task.values()
             await state.update_data(course_id=course_id, block_id=block_id, task_id=task_id)
         else:
-            await callback_query.answer('На твоем курсе еще нет ни одного задания!')
+            await callback_query.answer('На твоем курсе еще нет ни одного задания.', show_alert=True)
             await state.set_state(st.MappingExercise.mapping_command_menu)
             return
     else:

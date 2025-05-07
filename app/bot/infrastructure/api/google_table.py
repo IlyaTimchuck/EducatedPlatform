@@ -74,13 +74,13 @@ class GoogleSheetsClient:
 
     async def get_exercise(self) -> list[str]:
         await self._ensure_authorized('get_exercise')
-        ws = await self.spreadsheet.get_worksheet(0)
-        data = await ws.get_all_values()
-        return data[1:]
+        ws = await self.spreadsheet.worksheet('add_task')
+        exercises = await ws.get_all_values()
+        await ws.delete_rows(2, len(exercises))
+        return exercises[1:]
 
     async def add_user_in_table(self, real_name: str, telegram_username: str, course_title: str, user_id: int,
-                                timezone: str, date_of_joining: str, role: str, lives: int,
-                                ) -> None:
+                                timezone: str, date_of_joining: str, role: str, lives: int) -> None:
         await self._ensure_authorized('add_user_in_table')
         ws = await self.spreadsheet.worksheet('users')
         row = [real_name, telegram_username, course_title, str(user_id), timezone, date_of_joining,
@@ -91,6 +91,11 @@ class GoogleSheetsClient:
         await self._ensure_authorized('add_deadlines_in_table')
         ws = await self.spreadsheet.worksheet('deadlines')
         await ws.append_rows(data, value_input_option='USER_ENTERED')
+
+    async def add_course_in_table(self, course_data: list):
+        await self._ensure_authorized('add_course_in_table')
+        ws = await self.spreadsheet.worksheet('courses')
+        await ws.append_row(course_data)
 
     async def check_for_updates(self) -> bool:
         await self._ensure_authorized('check_for_updates')
@@ -215,8 +220,22 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                     except Exception as e:
                         logger.error(f"Error processing deadlines row {j}: {e}")
                         continue
+                # --- ОБРАБОТКА КУРСОВ ---
+                ws_courses = await google_sheets_client.spreadsheet.worksheet('courses')
+                raw_courses = await ws_courses.get_all_values()
+                headers_courses, courses_rows = raw_courses[0], raw_courses[1:]
+                normalized_courses = [h.strip().lower() for h in headers_courses]
 
-            await asyncio.sleep(60 + random.randint(0, 5))
+                for idx, row in enumerate(courses_rows, start=2):
+                    row_dict = dict(zip(normalized_courses, row))
+                    update_time = row_dict.get('update_time', '-').strip()
+                    if update_time != '-':
+                        new_course_name = row_dict.get('course_name')
+                        course_id = row_dict.get('course_id')
+                        await db.courses.change_course_name(new_course_name, int(course_id))
+                        col_upd = normalized_courses.index('update_time') + 1
+                        await ws_courses.update_cell(idx, col_upd, '-')
+                        await asyncio.sleep(60 + random.randint(0, 5))
 
         except HttpError as http_err:
             logger.exception("Google API HttpError")

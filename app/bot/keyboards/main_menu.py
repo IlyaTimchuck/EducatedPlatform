@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, Message
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 import app.bot.infrastructure.database as db
 
 
@@ -12,6 +12,7 @@ async def send_command_menu(user_id: int):
         ])
         lives = user_data['lives']
         deadline_today = await db.deadlines.get_today_deadline_for_keyboard(user_id)
+        print(deadline_today)
         text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
         if deadline_today:
             text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}\n'
@@ -40,7 +41,3 @@ back_button_student = InlineKeyboardMarkup(inline_keyboard=[
 back_button_admin = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Назад', callback_data='back_admin')]
 ])
-
-
-
-
