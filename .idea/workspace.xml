@@ -4,37 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)">
-      <change afterPath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/deadline_monitoring.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/bot_instance.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/bot_instance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/add_users.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/add_users.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/deletion_user.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/deletion_user.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/command.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/command.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/registration.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/registration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/blocks.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/blocks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/courses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/deadlines.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/init_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/tasks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/command_menu_student.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/middlewares/lives_limiter.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/middlewares/lives_limiter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/deadline.py" beforeDir="false" />
-    </list>
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="бот отправляется на сервер. добавлено .env окружение для всей скрытой информации. все токены заменены. поправлены следующие моменты:&#10;1) убрать кнопку отправить файл для админа&#10;2) добавить делдайн на уведомление об новом уроке&#10;3) к сообщению об добавлении урока добавить командное меню админа&#10;4) добавить&#10;&#10;1) /command_menu не удаляет homework&#10;2) последнее занятие открывается некорректно&#10;3) при обновлении жизней с новым блоком данные не актуализируются&#10;&#10;1) заменить название кнопки приступить к выполнению&#10;2) неправильный процент в метриках&#10;3) добавить удаление всех данных пользователя с таблиц" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -322,7 +292,23 @@
       <option name="project" value="LOCAL" />
       <updated>1746170724714</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="поправлены следующие моменты:">
+      <option name="closed" value="true" />
+      <created>1746821286232</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1746821286232</updated>
+    </task>
+    <task id="LOCAL-00004" summary="бот отправляется на сервер. добавлено .env окружение для всей скрытой информации. все токены заменены. поправлены следующие моменты:&#10;1) убрать кнопку отправить файл для админа&#10;2) добавить делдайн на уведомление об новом уроке&#10;3) к сообщению об добавлении урока добавить командное меню админа&#10;4) добавить&#10;&#10;1) /command_menu не удаляет homework&#10;2) последнее занятие открывается некорректно&#10;3) при обновлении жизней с новым блоком данные не актуализируются&#10;&#10;1) заменить название кнопки приступить к выполнению&#10;2) неправильный процент в метриках&#10;3) добавить удаление всех данных пользователя с таблиц">
+      <option name="closed" value="true" />
+      <created>1746821464466</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1746821464466</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -339,6 +325,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="реализовано полное ограничение доступа к курсу в случае, если у пользователя полностью закончились жизни. если жизни появляются доступ восстанавливается" />
     <MESSAGE value="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)" />
-    <option name="LAST_COMMIT_MESSAGE" value="добавлена кнопка для получения рабочего файла. переработана кнопка вернуться назад в homework (теперь возваращает на страницу самого задания)" />
+    <MESSAGE value="поправлены следующие моменты:" />
+    <MESSAGE value="бот отправляется на сервер. добавлено .env окружение для всей скрытой информации. все токены заменены. поправлены следующие моменты:&#10;1) убрать кнопку отправить файл для админа&#10;2) добавить делдайн на уведомление об новом уроке&#10;3) к сообщению об добавлении урока добавить командное меню админа&#10;4) добавить&#10;&#10;1) /command_menu не удаляет homework&#10;2) последнее занятие открывается некорректно&#10;3) при обновлении жизней с новым блоком данные не актуализируются&#10;&#10;1) заменить название кнопки приступить к выполнению&#10;2) неправильный процент в метриках&#10;3) добавить удаление всех данных пользователя с таблиц" />
+    <option name="LAST_COMMIT_MESSAGE" value="бот отправляется на сервер. добавлено .env окружение для всей скрытой информации. все токены заменены. поправлены следующие моменты:&#10;1) убрать кнопку отправить файл для админа&#10;2) добавить делдайн на уведомление об новом уроке&#10;3) к сообщению об добавлении урока добавить командное меню админа&#10;4) добавить&#10;&#10;1) /command_menu не удаляет homework&#10;2) последнее занятие открывается некорректно&#10;3) при обновлении жизней с новым блоком данные не актуализируются&#10;&#10;1) заменить название кнопки приступить к выполнению&#10;2) неправильный процент в метриках&#10;3) добавить удаление всех данных пользователя с таблиц" />
   </component>
 </project>
