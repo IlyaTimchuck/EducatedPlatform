@@ -1,0 +1,492 @@
+Index: main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from asyncio import run, create_task, CancelledError\r\nfrom aiogram import Bot, Dispatcher\r\nfrom handlers.__init__ import setup_routers\r\nfrom callbacks.__init__ import setup_routers_callbacks\r\nfrom deadline import setup_monitoring\r\nimport database as db\r\n\r\n\r\n\r\nasync def main() -> None:\r\n    bot = Bot('7667517965:AAGehj0I0nCwYFLBYTlpG2a4D5YQElh7qK0')\r\n    dp = Dispatcher()\r\n    setup_routers(dp)\r\n    setup_routers_callbacks(dp)\r\n    await db.create_db()\r\n    await db.create_course('Тестовый')\r\n    course_id = await db.get_course_id('Тестовый')\r\n    await db.add_users(['f'], course_id)\r\n    await db.add_users(['try_user'], course_id)\r\n    # await db.registration_user('try_user', 123, 'Europe/Moscow', 'admin')\r\n    monitor_task = create_task(setup_monitoring(bot))\r\n    task_id = await db.add_task('Задание 16', course_id, 'Автоматическая проверка',\r\n                                'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',\r\n                                'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',\r\n                                True, '2025-03-14')\r\n    await db.add_exercise(task_id,\r\n                          'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',\r\n                          '12')\r\n    await db.add_exercise(task_id,\r\n                          'Сеть, в которой содержится узел с IP-адресом 192.214.A.184, задана маской сети 255.255.255.224, где A - некоторое допустимое для записи IP-адреса число. Определите минимальное значение A, для которого для всех IP-адресов этой сети в двоичной записи IP-адреса суммарное количество единиц будет больше 15.',\r\n                          '43')\r\n    await db.add_exercise(task_id,\r\n                          '''В снежном королевстве существовала особая сеть, которая имела свой уникальный IP-адрес и маску.\r\nОднажды, Снежная Королева решила провести эксперимент, чтобы выяснить, сколько IP-адресов в её королевстве соответствуют определённому правилу. Она знала, что сеть ее королевства задается следующими данными:\r\nIP-адрес сети: 192.168.248.176\r\nСетевая маска: 255.255.255.240\r\nНеобходимо узнать, сколько в этой сети IP-адресов, для которых количество единиц и нулей в двоичной записи IP-адреса одинаково.''',\r\n                          '43')\r\n\r\n    # task_id1 = await db.add_task('Тестовый 2', course_id, 'Автоматическая проверка',\r\n    #                             'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',\r\n    #                             'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',\r\n    #                             True, '2025-03-10')\r\n    # await db.add_exercise(task_id1,\r\n    #                       '''Хуй попа жопа''',\r\n    #                       'сиси')\r\n    try:\r\n        await dp.start_polling(bot)\r\n    finally:\r\n        monitor_task.cancel()\r\n        try:\r\n            await monitor_task\r\n        except CancelledError:\r\n            print(\"Monitoring task cancelled\")\r\n        await bot.session.close()\r\n\r\n\r\nif __name__ == '__main__':\r\n    run(main())\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.py b/main.py
+--- a/main.py	(revision 97be1bd65d455853428703a689c7357f7577f346)
++++ b/main.py	(date 1742199494501)
+@@ -17,19 +17,20 @@
+     course_id = await db.get_course_id('Тестовый')
+     await db.add_users(['f'], course_id)
+     await db.add_users(['try_user'], course_id)
++    await db.add_block(course_id, 2)
+     # await db.registration_user('try_user', 123, 'Europe/Moscow', 'admin')
+     monitor_task = create_task(setup_monitoring(bot))
+-    task_id = await db.add_task('Задание 16', course_id, 'Автоматическая проверка',
++    task_data = await db.add_task('Задание 16', course_id, 'Автоматическая проверка',
+                                 'BAACAgIAAxkBAAIFk2ecdMIb9MARHD1FCDBfDykIyVA8AAIQYAAChk_gSJ5yxpryw_xrNgQ',
+                                 'BQACAgIAAxkBAAID4GeW8STy6kbcasFhPk_ZNds1Q5u1AAKwdAACV7G4SHyUzFl8D_k0NgQ',
+                                 True, '2025-03-14')
+-    await db.add_exercise(task_id,
++    await db.add_exercise(task_data['task_id'],
+                           'Узлы с IP-адресами 157.220.185.237 и 157.220.184.230 принадлежат одной сети. Какое наименьшее количество IP-адресов, в двоичной записи которых ровно 15 единиц, может содержаться в этой сети?',
+                           '12')
+-    await db.add_exercise(task_id,
++    await db.add_exercise(task_data['task_id'],
+                           'Сеть, в которой содержится узел с IP-адресом 192.214.A.184, задана маской сети 255.255.255.224, где A - некоторое допустимое для записи IP-адреса число. Определите минимальное значение A, для которого для всех IP-адресов этой сети в двоичной записи IP-адреса суммарное количество единиц будет больше 15.',
+                           '43')
+-    await db.add_exercise(task_id,
++    await db.add_exercise(task_data['task_id'] ,
+                           '''В снежном королевстве существовала особая сеть, которая имела свой уникальный IP-адрес и маску.
+ Однажды, Снежная Королева решила провести эксперимент, чтобы выяснить, сколько IP-адресов в её королевстве соответствуют определённому правилу. Она знала, что сеть ее королевства задается следующими данными:
+ IP-адрес сети: 192.168.248.176
+Index: database.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from typing import Any, Coroutine\r\nfrom zoneinfo import ZoneInfo\r\nfrom datetime import datetime, timedelta\r\nimport aiosqlite\r\nfrom collections import defaultdict\r\n\r\n\r\ndef current_datetime():\r\n    return datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\r\n\r\n\r\nasync def create_db() -> None:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        await con.execute(\"DROP TABLE IF EXISTS unregistered\")\r\n        await con.execute(\"DROP TABLE IF EXISTS users\")\r\n        await con.execute(\"DROP TABLE IF EXISTS courses\")\r\n        await con.execute(\"DROP TABLE IF EXISTS blocks\")\r\n        await con.execute(\"DROP TABLE IF EXISTS tasks\")\r\n        await con.execute(\"DROP TABLE IF EXISTS exercises\")\r\n        await con.execute(\"DROP TABLE IF EXISTS learning_progress\")\r\n        await con.execute(\"DROP TABLE IF EXISTS sessions\")\r\n        await con.execute(\"DROP TABLE IF EXISTS changed_deadlines\")\r\n        await con.execute(\"DROP TABLE IF EXISTS unique_timezones\")\r\n        await con.execute(\"DROP TABLE IF EXISTS history_of_lives\")\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS unregistered (\r\n            username TEXT,\r\n            course_id INTEGER)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS users (\r\n            username TEXT,\r\n            user_id INTEGER,\r\n            course_id INTEGER,\r\n            timezone_id TEXT,\r\n            date_of_joining TEXT,\r\n            lives INTEGER,\r\n            role TEXT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS courses(\r\n            course_title TEXT,\r\n            course_id INTEGER PRIMARY KEY AUTOINCREMENT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS blocks (\r\n            course_id INTEGER,\r\n            block_number INTEGER, \r\n            block_start TEXT,\r\n            block_id INTEGER PRIMARY KEY AUTOINCREMENT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS tasks (\r\n            task_title TEXT,\r\n            task_id INTEGER PRIMARY KEY AUTOINCREMENT, \r\n            block_id INTEGER,\r\n            verification TEXT,\r\n            video_id TEXT,\r\n            abstract_id TEXT,\r\n            availability_files BOOL,\r\n            deadline TEXT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS exercises (\r\n             task_id INTEGER,\r\n             exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n             exercise_condition TEXT,\r\n             exercise_answer TEXT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS learning_progress (\r\n             user_id INTEGER, \r\n             exercise_id INTEGER, \r\n             input_answer TEXT, \r\n             right_answer BOOL, \r\n             session_id INTEGER)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS sessions (\r\n            session_id INTEGER PRIMARY KEY AUTOINCREMENT,\r\n            user_id INTEGER,\r\n            task_id INTEGER,\r\n            is_completed BOOL,\r\n            session_start TEXT,\r\n            session_end TEXT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS changed_deadlines (\r\n                user_id INTEGER,\r\n                task_id INTEGER,\r\n                deadline TEXT,\r\n                PRIMARY KEY (user_id, task_id))''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS unique_timezones (\r\n            timezone TEXT,\r\n            timezone_id INTEGER PRIMARY KEY AUTOINCREMENT)''')\r\n\r\n        await con.execute('''CREATE TABLE IF NOT EXISTS history_of_lives (\r\n            user_id INTEGER,\r\n            task_id INTEGER,\r\n            current_lives INTEGER)''')\r\n\r\n        await con.commit()\r\n\r\n\r\n# Registration\r\nasync def create_course(course_title) -> None:\r\n    block_start = datetime.now().strftime(\"%Y-%m-%d\")\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        await con.execute('INSERT INTO courses (course_title) VALUES(?)', (course_title,))\r\n        await con.commit()\r\n        course_id = await get_course_id(course_title)\r\n        await con.execute('INSERT INTO blocks (course_id, block_start, block_number) VALUES(?, ?, ?)',\r\n                          (course_id, block_start, 1))\r\n        await con.commit()\r\n\r\n\r\nasync def add_users(usernames: list, course_id: int) -> None:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        for user in usernames:\r\n            await con.execute('INSERT INTO unregistered VALUES(?, ?)', (user, course_id))\r\n        await con.commit()\r\n\r\n\r\nasync def user_is_unregistered(username: str) -> bool:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        result = await con.execute('''SELECT EXISTS \r\n        (SELECT 1 FROM unregistered WHERE username = ?)''', (username,))\r\n        row = await result.fetchone()\r\n        return bool(row[0])\r\n\r\n\r\nasync def registration_user(username: str, user_id: int, timezone: str, role: str) -> None:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        tz_record = await (await con.execute(\r\n            \"SELECT timezone_id FROM unique_timezones WHERE timezone = ?\",\r\n            (timezone,))).fetchone()\r\n\r\n        if not tz_record:\r\n            await con.execute(\r\n                \"INSERT INTO unique_timezones (timezone) VALUES (?)\",\r\n                (timezone,)\r\n            )\r\n            tz_record = await (await con.execute(\"SELECT last_insert_rowid()\")).fetchone()\r\n\r\n        timezone_id = tz_record[0]\r\n        date_of_joining = current_datetime()\r\n        lives = 3\r\n        cursor = await con.execute('SELECT course_id FROM unregistered WHERE username = ?', (username,))\r\n        course_id = await cursor.fetchone()\r\n        if course_id:\r\n            await con.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)',\r\n                              (username, user_id, course_id[0], timezone_id, date_of_joining, lives, role))\r\n            await con.execute('DELETE FROM unregistered WHERE username = ?', (username,))\r\n            await con.commit()\r\n        return course_id\r\n\r\n\r\n# Other function\r\nasync def get_data_user(user_id: int) -> dict:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        async with con.cursor() as cursor:\r\n            await cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))\r\n            row = await cursor.fetchone()\r\n            if row:\r\n                return dict(row)\r\n            else:\r\n                return {}\r\n\r\n\r\nasync def get_list_courses() -> list:\r\n    \"\"\"Возвращает список всех названий курсов из базы данных.\"\"\"\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        query = 'SELECT course_title, course_id FROM courses'\r\n        async with con.execute(query) as cursor:\r\n            rows = await cursor.fetchall()\r\n            return [dict(row) for row in rows] if rows else []\r\n\r\n\r\nasync def get_blocks(course_id: int, current: bool = False) -> dict | int:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        cursor = await con.execute('SELECT block_number, block_id FROM blocks WHERE course_id = ?', (course_id,))\r\n        rows = await cursor.fetchall()\r\n        if current:\r\n            if rows:\r\n                return max(int(x[0]) for x in rows)\r\n            else:\r\n                return 0\r\n        return {int(x[0]): int(x[1]) for x in rows}\r\n\r\n\r\nasync def get_course_id(course_title: str) -> int:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        cursor = await con.execute('SELECT course_id FROM courses WHERE course_title=?', (course_title,))\r\n        course_id = await cursor.fetchone()\r\n        return course_id[0]\r\n\r\n\r\n# add_lesson\r\nasync def add_block(course_id: int, block_number: int) -> int:\r\n    \"\"\"Если блока не существует, то добавляет его. Всегда возвращает id блока\"\"\"\r\n    block_start = datetime.now().strftime(\"%Y-%m-%d\")\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        # Проверяем, существует ли блок\r\n        if block_number not in await get_blocks(course_id):\r\n            # Добавляем блок, если его нет\r\n            await con.execute(\r\n                'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',\r\n                (course_id, block_start, block_number)\r\n            )\r\n            await con.commit()\r\n\r\n        async with con.execute(\r\n                'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',\r\n                (course_id, block_number)) as cursor:\r\n            row = await cursor.fetchone()\r\n            return row[0]\r\n\r\n\r\nasync def add_task(task_title: str, block_id: int, verification: str, video_id: str, abstract_id: str,\r\n                   availability_files: bool, deadline: str) -> int:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        await con.execute(\r\n            'INSERT INTO tasks (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline) VALUES(?, ?, ?, ?, ?, ?, ?)',\r\n            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline))\r\n        await con.commit()\r\n        task_id = await con.execute('SELECT task_id FROM tasks WHERE task_title = ?', (task_title,))\r\n        return (await task_id.fetchone())[0]\r\n\r\n\r\nasync def add_exercise(task_id: int, exercise_condition: str, exercise_answer=None) -> None:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        if exercise_answer is None:\r\n            await con.execute(\r\n                'INSERT INTO exercises (task_id, exercise_condition) VALUES(?, ?)',\r\n                (task_id, exercise_condition))\r\n        else:\r\n            await con.execute(\r\n                'INSERT INTO exercises (task_id, exercise_condition, exercise_answer) VALUES(?, ?, ?)',\r\n                (task_id, exercise_condition, exercise_answer))\r\n        await con.commit()\r\n\r\n\r\n# mapping lesson\r\nasync def get_list_exercises(task_id: int) -> dict:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        cursor = await con.execute('SELECT verification FROM tasks WHERE task_id = ?', (task_id,))\r\n        verification_row = await cursor.fetchone()\r\n        verification = verification_row[0] if verification_row else None\r\n\r\n        if verification == 'Автоматическая проверка':\r\n            cursor = await con.execute(\r\n                'SELECT exercise_condition, exercise_answer, exercise_id FROM exercises WHERE task_id = ?',\r\n                (task_id,))\r\n            result = await cursor.fetchall()\r\n            return {num: (row[0], row[1], row[2]) for num, row in enumerate(result, 1)}\r\n        else:\r\n            cursor = await con.execute('SELECT exercise_condition, exercise_id FROM exercises WHERE task_id = ?',\r\n                                       (task_id,))\r\n            result = await cursor.fetchall()\r\n            return {num: (row[0], row[1]) for num, row in enumerate(result, 1)}\r\n\r\n\r\nasync def get_list_tasks(block_id: int) -> dict:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        async with con.cursor() as cursor:\r\n            cursor = await con.execute('SELECT task_title, task_id FROM tasks WHERE block_id=?',\r\n                                       (block_id,))\r\n            row = await cursor.fetchall()\r\n            if row:\r\n                return dict(row)\r\n            else:\r\n                return {}\r\n\r\n\r\nasync def mapping_task_status(user_id, task_id):\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        query = '''\r\n            SELECT \r\n                COUNT(e.exercise_id) as total_exercises,\r\n                SUM(lp.right_answer) as completed_exercises\r\n            FROM exercises e\r\n            LEFT JOIN learning_progress lp\r\n                ON e.exercise_id = lp.exercise_id\r\n                AND lp.user_id = ?\r\n            WHERE e.task_id = ?\r\n        '''\r\n        async with con.execute(query, (user_id, task_id)) as cursor:\r\n            result = await cursor.fetchone()\r\n\r\n            if not result or result['total_exercises'] == 0:\r\n                return '❌'\r\n\r\n            return '✅' if result['completed_exercises'] == result['total_exercises'] else '⏳'\r\n\r\n\r\nasync def get_data_task(task_id: int):\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        query = '''SELECT * FROM tasks WHERE task_id = ?'''\r\n        async with con.execute(query, (task_id,)) as cursor:\r\n            task_data = await cursor.fetchone()\r\n            return dict(task_data)\r\n\r\n\r\n# Recording response(answer) user\r\nasync def get_progress_user(task_id: int, session_id: int = None) -> dict:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n\r\n        query = \"\"\"\r\n        SELECT\r\n            e.exercise_id,\r\n            lp.input_answer,\r\n            lp.right_answer\r\n        FROM\r\n            learning_progress AS lp\r\n        JOIN\r\n            exercises AS e ON lp.exercise_id = e.exercise_id\r\n        WHERE\r\n            e.task_id = ?\r\n        \"\"\"\r\n\r\n        params = (task_id,)\r\n        if session_id is not None:\r\n            query += \" AND lp.session_id = ?\"\r\n            params += (session_id,)\r\n\r\n        async with con.execute(query, params) as cursor:\r\n            result = await cursor.fetchall()\r\n            if result:\r\n                return {row['exercise_id']: {'input_answer': row['input_answer'],\r\n                                             'status_input_answer': '✅' if row['right_answer'] else '❌'}\r\n                        for row in result}\r\n            else:\r\n                return {}\r\n\r\n\r\nasync def add_progress_user(user_id: int, task_id: int, homework: dict, results: dict, session_start: str,\r\n                            session_end: str, is_completed: bool = False) -> None:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        cursor = await con.execute(\r\n            'INSERT INTO sessions (user_id, task_id, is_completed, session_start, session_end) VALUES (?, ?, ?, ?, ?)',\r\n            (user_id, task_id, is_completed, session_start, session_end)\r\n        )\r\n        session_id = cursor.lastrowid\r\n\r\n        for exercise_num in homework:\r\n            _, right_answer, exercise_id = homework[exercise_num]\r\n            input_answer = results.get(exercise_num, {}).get('input_answer', None)\r\n            if input_answer is not None:\r\n                is_correct = (str(input_answer).strip() == str(right_answer).strip())\r\n                await con.execute(\r\n                    'INSERT INTO learning_progress VALUES(?, ?, ?, ?, ?)',\r\n                    (user_id, exercise_id, input_answer, is_correct, session_id)\r\n                )\r\n        await con.commit()\r\n\r\n\r\nasync def get_last_session(user_id: int, task_id: int) -> dict:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        query = '''\r\n            SELECT *\r\n            FROM sessions\r\n            WHERE user_id = ? AND task_id = ?\r\n            ORDER BY session_id DESC\r\n            LIMIT 1\r\n        '''\r\n        async with con.execute(query, (user_id, task_id)) as cursor:\r\n            row = await cursor.fetchone()\r\n            return dict(row) if row else {}\r\n\r\n\r\nasync def get_timezones() -> dict:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        query = 'SELECT * FROM unique_timezones'\r\n        async with await con.execute(query) as cursor:\r\n            rows = await cursor.fetchall()\r\n            return {row[\"timezone_id\"]: row[\"timezone\"] for row in rows} if rows else {}\r\n\r\n\r\n# async def get_users_by_timezone(timezone_id: int) -> dict:\r\n#     async with aiosqlite.connect('educated_platform.db') as con:\r\n#         con.row_factory = aiosqlite.Row\r\n#         query = 'SELECT course_id, user_id FROM users WHERE timezone_id = ?'\r\n#         async with con.execute(query, (timezone_id,)) as cursor:\r\n#             rows = await cursor.fetchall()\r\n#             result = defaultdict(list)\r\n#             for row in rows:\r\n#                 result[row[\"course_id\"]].append(row[\"user_id\"])\r\n#             return dict(result)\r\n#\r\n#\r\n\r\n\r\nasync def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> list:\r\n    \"\"\"\r\n    Возвращает список строк, где каждая строка содержит:\r\n      - user_id: идентификатор пользователя\r\n      - task_id: идентификатор задания\r\n      - actual_deadline: дедлайн, учитывающий changed_deadlines\r\n      - is_completed: статус завершения сессии (может быть None, если сессии нет)\r\n    Для заданий, дедлайн которых равен current_date,\r\n    и пользователей с заданным timezone_id.\r\n    Возвращает только тех пользователей, у которых нет сессий с is_completed = 1.\r\n    \"\"\"\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        con.row_factory = aiosqlite.Row\r\n        query = \"\"\"SELECT\r\n                u.user_id,\r\n                t.task_id,\r\n                u.lives\r\n            FROM tasks t\r\n            JOIN blocks b ON b.block_id = t.block_id\r\n            JOIN users u ON u.course_id = b.course_id\r\n            LEFT JOIN changed_deadlines cd ON cd.task_id = t.task_id AND cd.user_id = u.user_id\r\n            LEFT JOIN sessions s ON s.task_id = t.task_id AND s.user_id = u.user_id\r\n            WHERE u.timezone_id = ?\r\n              AND COALESCE(cd.deadline, t.deadline) = ?\r\n            GROUP BY u.user_id, t.task_id\r\n            HAVING MAX(s.is_completed) IS NULL OR MAX(s.is_completed) = 0\r\n                    \"\"\"\r\n\r\n        async with con.execute(query, (timezone_id, current_date)) as cursor:\r\n            rows = await cursor.fetchall()\r\n            return [dict(row) for row in rows] if rows else []\r\n\r\n\r\n\r\nasync def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> None:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        # Получаем значение timezone из unique_timezones\r\n        async with con.execute(\"SELECT timezone FROM unique_timezones WHERE timezone_id = ?\", (timezone_id,)) as cur:\r\n            row = await cur.fetchone()\r\n            if not row:\r\n                raise ValueError(f\"Timezone with id {timezone_id} not found\")\r\n            tz_value = str(row[0])\r\n\r\n        # Вычисляем новый дедлайн как завтрашнюю дату с учетом timezone\r\n        new_deadline = (datetime.now(tz=ZoneInfo(tz_value)) + timedelta(days=1)).strftime(\"%Y-%m-%d %H:%M:%S\")\r\n\r\n        await con.execute(\"BEGIN TRANSACTION\")\r\n        try:\r\n            # Группируем уникальные пары (user_id, task_id)\r\n            unique_pairs = {(u[\"user_id\"], u[\"task_id\"]) for u in updates}\r\n\r\n            # Обновляем дедлайны в changed_deadlines с использованием UPSERT\r\n            await con.executemany(\r\n                \"\"\"INSERT INTO changed_deadlines (user_id, task_id, deadline)\r\n                   VALUES (?, ?, ?)\r\n                   ON CONFLICT(user_id, task_id) \r\n                   DO UPDATE SET deadline = excluded.deadline\"\"\",\r\n                [(user_id, task_id, new_deadline) for user_id, task_id in unique_pairs]\r\n            )\r\n\r\n            # Считаем количество списаний для каждого пользователя\r\n            user_counts = defaultdict(int)\r\n            for u in updates:\r\n                user_counts[u[\"user_id\"]] += 1\r\n\r\n            # Обновляем жизни для каждого пользователя\r\n            await con.executemany(\r\n                \"\"\"UPDATE users \r\n                   SET lives = MAX(lives - ?, 0)\r\n                   WHERE user_id = ?\"\"\",\r\n                [(count, user_id) for user_id, count in user_counts.items()]\r\n            )\r\n\r\n            # Готовим записи для истории списаний.\r\n            # Предполагаем, что в updates для каждого пользователя поле \"lives\" содержит текущее значение до списания.\r\n            history_records = []\r\n            for u in updates:\r\n                # Если один пользователь появляется несколько раз, мы будем добавлять несколько записей.\r\n                new_lives = u[\"lives\"] - user_counts[u[\"user_id\"]]\r\n                history_records.append((u[\"user_id\"], u[\"task_id\"], new_lives))\r\n\r\n            # Выполняем пакетную вставку в history_of_lives\r\n            await con.executemany(\r\n                \"INSERT INTO history_of_lives (user_id, task_id, current_lives) VALUES (?, ?, ?)\",\r\n                history_records\r\n            )\r\n\r\n            await con.commit()\r\n\r\n        except Exception as e:\r\n            await con.rollback()\r\n            raise e\r\n\r\n\r\nasync def get_today_deadline(user_id: int | None = None, timezone_id: int | None = None) -> None | list:\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        if user_id:\r\n            current_deadline = datetime.now().strftime(\"%Y-%m-%d\")\r\n            query = '''SELECT t.task_title, u.lives\r\n                           FROM tasks t \r\n                           JOIN blocks b ON b.block_id = t.block_id\r\n                           JOIN users u ON b.course_id = u.course_id\r\n                           WHERE u.user_id = ? AND t.deadline = ? \r\n                           '''\r\n            con.row_factory = aiosqlite.Row\r\n            async with con.execute(query, (user_id, current_deadline)) as cursor:\r\n                rows = await cursor.fetchall()\r\n                return [dict(row) for row in rows] if rows else []\r\n        elif timezone_id:\r\n            query = '''SELECT u.user_id, u.course_id, t.task_id, t.task_title, b.block_id\r\n                       FROM tasks t\r\n                       JOIN blocks b ON b.block_id = t.block_id\r\n                       JOIN users u ON u.course_id = b.block_id\r\n                       WHERE u.timezone_id = ?'''\r\n            con.row_factory = aiosqlite.Row\r\n            async with con.execute(query, (timezone_id,)) as cursor:\r\n                rows = await cursor.fetchall()\r\n                return [dict(row) for row in rows] if rows else []\r\n\r\n\r\nasync def get_today_new_block() -> list:\r\n    current_date = datetime.now().strftime(\"%Y-%m-%d\")\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        cursor = await con.execute('SELECT course_id FROM blocks WHERE block_start=?', current_date)\r\n        rows = await cursor.fetchall()\r\n        return [row[0] for row in rows] if rows else []\r\n\r\n\r\nasync def update_info_with_new_block(course_id, block_id):\r\n    current_date = datetime.now().strftime(\"%Y-%m-%d\")\r\n    async with aiosqlite.connect('educated_platform.db') as con:\r\n        cursor = await con.execute('SELECT course_id FROM blocks WHERE block_start=?', current_date)\r\n        rows = await cursor.fetchall()\r\n        new_block_today = [row[0] for row in rows] if rows else []\r\n        if new_block_today:\r\n            await con.execute(\"BEGIN TRANSACTION\")\r\n\r\n\r\n\r\n# async def get_list_lives(user)
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/database.py b/database.py
+--- a/database.py	(revision 97be1bd65d455853428703a689c7357f7577f346)
++++ b/database.py	(date 1742199494402)
+@@ -1,10 +1,10 @@
+-from typing import Any, Coroutine
+ from zoneinfo import ZoneInfo
+ from datetime import datetime, timedelta
+ import aiosqlite
+ from collections import defaultdict
+ 
+ 
++
+ def current_datetime():
+     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+ 
+@@ -137,7 +137,7 @@
+ 
+         timezone_id = tz_record[0]
+         date_of_joining = current_datetime()
+-        lives = 3
++        lives = 2
+         cursor = await con.execute('SELECT course_id FROM unregistered WHERE username = ?', (username,))
+         course_id = await cursor.fetchone()
+         if course_id:
+@@ -191,35 +191,83 @@
+ 
+ 
+ # add_lesson
+-async def add_block(course_id: int, block_number: int) -> int:
+-    """Если блока не существует, то добавляет его. Всегда возвращает id блока"""
++
++async def check_block_exists(course_id: int, block_number: int) -> bool:
++    async with aiosqlite.connect('educated_platform.db') as con:
++        async with con.execute(
++            'SELECT 1 FROM blocks WHERE course_id = ? AND block_number = ?',
++            (course_id, block_number)
++        ) as cursor:
++            return bool(await cursor.fetchone())
++
++
++async def create_block(course_id: int, block_number: int) -> int:
++    """Создает новый блок и возвращает его ID"""
+     block_start = datetime.now().strftime("%Y-%m-%d")
+     async with aiosqlite.connect('educated_platform.db') as con:
+-        # Проверяем, существует ли блок
+-        if block_number not in await get_blocks(course_id):
+-            # Добавляем блок, если его нет
+-            await con.execute(
+-                'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
+-                (course_id, block_start, block_number)
+-            )
+-            await con.commit()
++        cursor = await con.execute(
++            'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
++            (course_id, block_start, block_number)
++        )
++        await con.commit()
++        return cursor.lastrowid
+ 
++
++async def get_block_id(course_id: int, block_number: int) -> int:
++    async with aiosqlite.connect('educated_platform.db') as con:
+         async with con.execute(
+-                'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
+-                (course_id, block_number)) as cursor:
++            'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
++            (course_id, block_number)
++        ) as cursor:
+             row = await cursor.fetchone()
+-            return row[0]
++            return row[0] if row else None
++
++
++# async def add_block(course_id: int, block_number: int) -> int:
++#     """Если блока не существует, то добавляет его. Всегда возвращает id блока"""
++#     block_start = datetime.now().strftime("%Y-%m-%d")
++#     async with aiosqlite.connect('educated_platform.db') as con:
++#         # Проверяем, существует ли блок
++#         if block_number not in await get_blocks(course_id):
++#             # Добавляем блок, если его нет
++#             await con.execute(
++#                 'INSERT INTO blocks (course_id, block_start, block_number) VALUES (?, ?, ?)',
++#                 (course_id, block_start, block_number)
++#             )
++#             await con.commit()
++#
++#         async with con.execute(
++#                 'SELECT block_id FROM blocks WHERE course_id = ? AND block_number = ?',
++#                 (course_id, block_number)) as cursor:
++#             row = await cursor.fetchone()
++#             return row[0]
+ 
+ 
+ async def add_task(task_title: str, block_id: int, verification: str, video_id: str, abstract_id: str,
+-                   availability_files: bool, deadline: str) -> int:
++                   availability_files: bool, deadline: str) -> dict:
+     async with aiosqlite.connect('educated_platform.db') as con:
+-        await con.execute(
+-            'INSERT INTO tasks (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline) VALUES(?, ?, ?, ?, ?, ?, ?)',
+-            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline))
++        # Вставляем новую задачу
++        cursor = await con.execute(
++            '''INSERT INTO tasks 
++            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline)
++            VALUES(?, ?, ?, ?, ?, ?, ?)''',
++            (task_title, block_id, verification, video_id, abstract_id, availability_files, deadline)
++        )
++        task_id = cursor.lastrowid  # Получаем ID созданной задачи
+         await con.commit()
+-        task_id = await con.execute('SELECT task_id FROM tasks WHERE task_title = ?', (task_title,))
+-        return (await task_id.fetchone())[0]
++        query = '''
++            SELECT 
++                t.task_id, 
++                t.task_title, 
++                b.block_start, 
++                b.course_id
++            FROM tasks t
++            JOIN blocks b ON t.block_id = b.block_id
++            WHERE t.task_id = ?'''
++        con.row_factory = aiosqlite.Row
++        async with con.execute(query, (task_id,)) as cursor:
++            result = await cursor.fetchone()
++            return dict(result) if result else {}
+ 
+ 
+ async def add_exercise(task_id: int, exercise_condition: str, exercise_answer=None) -> None:
+@@ -304,17 +352,16 @@
+     async with aiosqlite.connect('educated_platform.db') as con:
+         con.row_factory = aiosqlite.Row
+ 
+-        query = """
+-        SELECT
+-            e.exercise_id,
+-            lp.input_answer,
+-            lp.right_answer
+-        FROM
+-            learning_progress AS lp
+-        JOIN
+-            exercises AS e ON lp.exercise_id = e.exercise_id
+-        WHERE
+-            e.task_id = ?
++        query = """SELECT
++                    e.exercise_id,
++                    lp.input_answer,
++                    lp.right_answer
++                FROM
++                    learning_progress lp
++                JOIN
++                    exercises e ON lp.exercise_id = e.exercise_id
++                WHERE
++                    e.task_id = ?
+         """
+ 
+         params = (task_id,)
+@@ -424,7 +471,6 @@
+             return [dict(row) for row in rows] if rows else []
+ 
+ 
+-
+ async def update_deadlines_and_lives_bulk(updates: list, timezone_id: int) -> None:
+     async with aiosqlite.connect('educated_platform.db') as con:
+         # Получаем значение timezone из unique_timezones
+@@ -519,15 +565,15 @@
+         return [row[0] for row in rows] if rows else []
+ 
+ 
+-async def update_info_with_new_block(course_id, block_id):
+-    current_date = datetime.now().strftime("%Y-%m-%d")
++async def update_info_with_new_block(course_id: int):
+     async with aiosqlite.connect('educated_platform.db') as con:
+-        cursor = await con.execute('SELECT course_id FROM blocks WHERE block_start=?', current_date)
+-        rows = await cursor.fetchall()
+-        new_block_today = [row[0] for row in rows] if rows else []
+-        if new_block_today:
+-            await con.execute("BEGIN TRANSACTION")
+-
++        await con.execute('BEGIN TRANSACTION')
++        try:
++            con.execute('UPDATE users SET lives=? WHERE course_id = ? AND lives != ?', (3, course_id, 0))
++        except Exception as e:
++            # При ошибке откатываем изменения.
++            await con.rollback()
++            print("Ошибка при выполнении транзакции:", e)
++            raise e
+ 
+-
+-# async def get_list_lives(user)
+\ No newline at end of file
++# async def get_list_lives(user)
+Index: keyboard.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from aiogram.fsm.context import FSMContext\r\nfrom aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, Message\r\n\r\nimport database as db\r\nimport state as st\r\nfrom aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder\r\nimport calendar\r\n\r\n\r\nasync def mapping_block_list(course_id: int):\r\n    data = await db.get_blocks(course_id)\r\n    builder = InlineKeyboardBuilder()\r\n    for block in data:\r\n        builder.row(InlineKeyboardButton(text=f'{block} блок', callback_data=f'open_block:{course_id}:{data[block]}'))\r\n    builder.row(*[InlineKeyboardButton(text='Назад', callback_data='back_student')])\r\n    return builder.as_markup()\r\n\r\n\r\nasync def mapping_list_tasks(user_id: int, course_id: int, block_id: int) -> InlineKeyboardMarkup:\r\n    builder = InlineKeyboardBuilder()\r\n    tasks = await db.get_list_tasks(block_id)\r\n    for task_title in tasks:\r\n        task_id = tasks[task_title]\r\n        task_status = await db.mapping_task_status(user_id, task_id)\r\n        builder.row(\r\n            *[InlineKeyboardButton(text=f'{task_title}{task_status}',\r\n                                   callback_data=f'open_task:{course_id}:{task_id}')])\r\n    return builder.as_markup()\r\n\r\n\r\nasync def mapping_homework(quantity_exercise: int, current_exercise: int) -> InlineKeyboardMarkup:\r\n    builder = InlineKeyboardBuilder()\r\n    if current_exercise == 1:\r\n        builder.add(\r\n            InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),\r\n            InlineKeyboardButton(text='\\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))\r\n        builder.adjust(2)\r\n    elif current_exercise == quantity_exercise:\r\n        builder.add(InlineKeyboardButton(text=\"\\u2190\", callback_data=f'prev_exercise:{current_exercise - 1}'),\r\n                    InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}',\r\n                                         callback_data='open_list_exercises'))\r\n        builder.adjust(2)\r\n    else:\r\n        builder.add(\r\n            InlineKeyboardButton(text=\"\\u2190\", callback_data=f'prev_exercise:{current_exercise - 1}'),\r\n            InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),\r\n            InlineKeyboardButton(text='\\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))\r\n        builder.adjust(3)\r\n    builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])\r\n    return builder.as_markup()\r\n\r\n\r\nasync def mapping_task(course_id, block_id, abstract_retrieved: bool = False) -> InlineKeyboardMarkup:\r\n    keyboard_buttons = [\r\n        [InlineKeyboardButton(text='Домашняя работа', callback_data='open_homework')]\r\n    ]\r\n    if not abstract_retrieved:\r\n        keyboard_buttons.append(\r\n            [InlineKeyboardButton(text='Конспект урока', callback_data='get_abstract')]\r\n        )\r\n    keyboard_buttons.append([\r\n        InlineKeyboardButton(text='Назад', callback_data=f'open_block_from_homework:{course_id}:{block_id}'),\r\n        InlineKeyboardButton(text='В главное меню', callback_data='back_student')\r\n    ])\r\n    return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)\r\n\r\n\r\nasync def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeyboardMarkup:\r\n    builder = InlineKeyboardBuilder()\r\n    task_id = state_data['task_data']['task_id']\r\n    homework = state_data['homework']\r\n    if decides:\r\n        results = state_data.get('results', {})\r\n        for exercise_number in homework:\r\n            result_status = results.get(exercise_number, {}).get('status_input_answer', '⌛')\r\n            builder.add(InlineKeyboardButton(\r\n                text=f'{exercise_number} задание {result_status}',\r\n                callback_data=f'open_exercise:{exercise_number}'\r\n            ))\r\n    else:\r\n        progress_solving = await db.get_progress_user(task_id)\r\n        for exercise_number in homework:\r\n            if exercise_number in progress_solving:\r\n                status = '⌛' if progress_solving[exercise_number]['input_answer'] is None else \\\r\n                    progress_solving[exercise_number]['exercise_status']\r\n            else:\r\n                status = '⌛'  # Или любой другой значок, если данных нет\r\n\r\n            builder.add(InlineKeyboardButton(\r\n                text=f'{exercise_number} задание {status}',\r\n                callback_data=f'open_exercise:{exercise_number}'\r\n            ))\r\n\r\n    builder.adjust(1)\r\n    return builder.as_markup()\r\n\r\n\r\nasync def choose_parameters_task(deadline) -> InlineKeyboardMarkup:\r\n    keyboard = InlineKeyboardMarkup(\r\n        inline_keyboard=[[InlineKeyboardButton(text='Автоматическая проверка', callback_data=f'verif:auto:{deadline}'),\r\n                          InlineKeyboardButton(text='Ручная проверка', callback_data=f'verif:manual:{deadline}')]\r\n                         ])\r\n    return keyboard\r\n\r\n\r\nasync def generate_calendar(year: int, month: int) -> InlineKeyboardMarkup:\r\n    builder = InlineKeyboardBuilder()\r\n    builder.row(\r\n        InlineKeyboardButton(text=\"\\u2190\", callback_data=f\"prev_month:{year}:{month}\"),\r\n        InlineKeyboardButton(text=f\"{year}, {calendar.month_name[month]}\", callback_data=\"ignore\"),\r\n        InlineKeyboardButton(text=\"\\u2192\", callback_data=f\"next_month:{year}:{month}\")\r\n    )\r\n    day_names = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']\r\n    builder.row(*[InlineKeyboardButton(text=day, callback_data='ignore') for day in day_names])\r\n    month_calendar = calendar.monthcalendar(year, month)\r\n    for week in month_calendar:\r\n        builder.row(*[\r\n            InlineKeyboardButton(text=str(day) if day != 0 else ' ',\r\n                                 callback_data=f'select_day:{year}:{month}:{day}')\r\n            for day in week])\r\n    return builder.as_markup()\r\n\r\n\r\nasync def to_change_block(current_block):\r\n    change_block_buttons = InlineKeyboardMarkup(inline_keyboard=[\r\n        [InlineKeyboardButton(text='Предыдущий блок', callback_data=f'reduce_block:{current_block}'),\r\n         InlineKeyboardButton(text='Следующий блок', callback_data=f'increase_block:{current_block}')],\r\n        [InlineKeyboardButton(text='Подтвердить выбор', callback_data=f'confirm_block:{current_block}')],\r\n        [InlineKeyboardButton(text='Назад', callback_data='back_admin')]\r\n    ])\r\n    return change_block_buttons\r\n\r\n\r\nasync def choose_course_inline():\r\n    \"\"\"Используется для добавления задания\"\"\"\r\n    builder = InlineKeyboardBuilder()\r\n    courses = await db.get_list_courses()\r\n    for course in courses:\r\n        builder.add(InlineKeyboardButton(text=course['course_title'], callback_data=f\"choose_course:{course['course_title']}\"))\r\n\r\n    return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)\r\n\r\n\r\nasync def choose_course_reply():\r\n    \"\"\"Используется для добавления списка пользователей\"\"\"\r\n    builder = ReplyKeyboardBuilder()\r\n    courses = await db.get_list_courses()\r\n    builder.add(KeyboardButton(text='Создать новый'))\r\n    for course in courses:\r\n        builder.add(KeyboardButton(text=course['task_title']))\r\n    builder.adjust(2)\r\n    return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)\r\n\r\n\r\nasync def send_command_menu(user_id: int):\r\n    user_data = await db.get_data_user(user_id)\r\n    if user_data['role'] == 'student':\r\n        command_menu = InlineKeyboardMarkup(inline_keyboard=[\r\n            [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],\r\n            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='last_lesson')],\r\n            [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],\r\n        ])\r\n        lives = user_data['lives']\r\n        deadline_today = await db.get_today_deadline(user_id)\r\n        text_message = f'Текущее количество жизней: {lives * '❤\uFE0F'}\\n'\r\n        if deadline_today:\r\n            text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}'\r\n        else:\r\n            text_message += 'Дедлайны сегодня: -'\r\n        return text_message, command_menu\r\n    elif user_data['role'] == 'admin':\r\n        command_menu = InlineKeyboardMarkup(inline_keyboard=[\r\n            [InlineKeyboardButton(text='Добавить урок', callback_data='add_lesson')],\r\n            [InlineKeyboardButton(text='Добвить пользователей', callback_data='add_users')]\r\n        ])\r\n        text_message = 'Распознал тебя как админа'\r\n        return text_message, command_menu\r\n\r\n\r\nasync def start_the_task_from_the_reminder(course_id: int, task_id: int) -> InlineKeyboardMarkup:\r\n    button = InlineKeyboardMarkup(inline_keyboard=[\r\n        [InlineKeyboardButton(text='Приступить к выполнению задания', callback_data=f'open_task:{course_id}:{task_id}')]\r\n    ])\r\n    # await state.set_state(st.MappingExercise.mapping_task)\r\n    # await state.update_data(course_id=course_id, block_id=block_id)\r\n    return button\r\n\r\n\r\nback_button_student = InlineKeyboardMarkup(inline_keyboard=[\r\n    [InlineKeyboardButton(text='Назад', callback_data='back_student')]\r\n])\r\n\r\nback_button_admin = InlineKeyboardMarkup(inline_keyboard=[\r\n    [InlineKeyboardButton(text='Назад', callback_data='back_admin')]\r\n])\r\n\r\nsend_homework_keyboard = InlineKeyboardMarkup(inline_keyboard=[\r\n    [InlineKeyboardButton(text='Редактировать введённые данные', callback_data='change_homework')],\r\n    [InlineKeyboardButton(text='Отправить домашнюю работу', callback_data='send_homework')]\r\n])\r\n\r\navailability_files_task = InlineKeyboardMarkup(inline_keyboard=[\r\n    [InlineKeyboardButton(text='Нет', callback_data='availability_files:Нет'),\r\n     InlineKeyboardButton(text='Да', callback_data='availability_files:Да')]\r\n])\r\n\r\nconfirm_task = InlineKeyboardMarkup(inline_keyboard=[\r\n    [InlineKeyboardButton(text='Редактировать', callback_data='finish_task:edit_task'),\r\n     InlineKeyboardButton(text='Подтвердить', callback_data='finish_task:confirm_task')]\r\n])\r\n\r\nsend_exercise = InlineKeyboardMarkup(inline_keyboard=[\r\n    [InlineKeyboardButton(text='Отправить данные из таблицы в базу данных', callback_data='send_exercise')]\r\n])\r\n\r\nlocation_button = ReplyKeyboardMarkup(\r\n    keyboard=[\r\n        [KeyboardButton(text=\"\uD83D\uDCCD Отправить геолокацию\", request_location=True)]\r\n    ],\r\n    resize_keyboard=True,\r\n    one_time_keyboard=True\r\n)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/keyboard.py b/keyboard.py
+--- a/keyboard.py	(revision 97be1bd65d455853428703a689c7357f7577f346)
++++ b/keyboard.py	(date 1742199494500)
+@@ -220,3 +220,9 @@
+     resize_keyboard=True,
+     one_time_keyboard=True
+ )
++
++
++confirm_new_block_keyboard = InlineKeyboardMarkup(inline_keyboard=[
++    [InlineKeyboardButton(text='Отменить', callback_data='cancel_update_block'),
++     InlineKeyboardButton(text='Подтвердить', callback_data='confirm_new_block')]
++])
+\ No newline at end of file
+Index: callbacks/create_task.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from aiogram.fsm.context import FSMContext\r\nfrom aiogram.types import CallbackQuery, InputMediaVideo\r\nfrom aiogram import Router, F\r\nfrom datetime import datetime\r\nfrom google_table import get_exersice\r\n\r\nimport calendar\r\nimport state as st\r\nimport database as db\r\nimport keyboard as kb\r\n\r\nrouter = Router()\r\n\r\n\r\n@router.callback_query(F.data == 'add_users')\r\nasync def process_add_users(callback_query: CallbackQuery, state: FSMContext):\r\n    await callback_query.answer()\r\n    await callback_query.message.answer('Выбери курс', reply_markup=await kb.choose_course_reply())\r\n    await state.set_state(st.AddUsers.choose_course)\r\n\r\n\r\n@router.callback_query(F.data == 'add_lesson')\r\nasync def process_add_lesson(callback_query: CallbackQuery):\r\n    await callback_query.answer()\r\n    await callback_query.message.edit_text(f'Для добавления домашнего задания выбери курс',\r\n                                           reply_markup=await kb.choose_course_inline())\r\n\r\n\r\n@router.callback_query(lambda c: c.data.startswith('choose_course'))\r\nasync def process_increase_block(callback_query: CallbackQuery, state: FSMContext):\r\n    await callback_query.answer()\r\n    await state.set_state(st.AddTask.choose_course)\r\n    course_name = callback_query.data.split(\":\")[-1]\r\n    course_id = await db.get_course_id(course_name)\r\n    await state.update_data(course_tittle=course_name)\r\n    current_block = (await state.get_data()).get('current_block')\r\n    if current_block is None:\r\n        current_block = await db.get_blocks(course_id, current=True)\r\n        await state.update_data(current_block=current_block)\r\n    await callback_query.message.edit_text(\r\n        f'Выбери блок\\nТекущий блок на курсе: {current_block}\\n\\nТекущий выбор: {current_block} блок',\r\n        reply_markup=await kb.to_change_block(current_block))\r\n\r\n\r\n@router.callback_query(\r\n    lambda c: c.data.startswith(\"increase_block\") or c.data.startswith(\"reduce_block\") or c.data.startswith(\r\n        \"confirm_block\"))\r\nasync def process_increase_block(callback_query: CallbackQuery, state: FSMContext):\r\n    await callback_query.answer()\r\n    current_block = (await state.get_data()).get('current_block')\r\n\r\n    action, current_value = callback_query.data.split(\":\")\r\n    choose_block = int(current_value)\r\n\r\n    if action == \"increase_block\":\r\n        choose_block += 1\r\n    elif action == \"reduce_block\" and choose_block != 1:\r\n        choose_block -= 1\r\n    elif action == 'confirm_block':\r\n        state_data = await state.get_data()\r\n        course_id = await db.get_course_id(state_data['course_tittle'])\r\n        block_id = await db.add_block(course_id, choose_block)\r\n        year = datetime.now().year\r\n        month = datetime.now().month\r\n        await state.update_data(block_id=block_id, block_number=choose_block)\r\n        await state.set_state(st.AddTask.choose_options)\r\n        await callback_query.message.edit_text('Выбери дату дедлайна',\r\n                                               reply_markup=await kb.generate_calendar(year, month))\r\n\r\n    new_text = f'Выбери блок\\nТекущий блок на курсе: {choose_block}\\n\\nТекущий выбор: {choose_block} блок'\r\n    if callback_query.message.text != new_text:\r\n        await callback_query.message.edit_text(text=f'Выбери блок\\nТекущий блок на курсе: {current_block}\\n\\nТекущий выбор: {choose_block} блок',\r\n                                               reply_markup=await kb.to_change_block(choose_block))\r\n\r\n\r\n@router.callback_query(lambda c: c.data.startswith('prev_month') or c.data.startswith('next_month'))\r\nasync def month(callback_query: CallbackQuery):\r\n    action, year, month = callback_query.data.split(\":\")\r\n    year, month = int(year), int(month)\r\n    if action == \"prev_month\":\r\n        if month == 1:\r\n            year -= 1\r\n            month = 12\r\n        else:\r\n            month -= 1\r\n    elif action == \"next_month\":\r\n        if month == 12:\r\n            year += 1\r\n            month = 1\r\n        else:\r\n            month += 1\r\n    new_markup = await kb.generate_calendar(year, month)\r\n    await callback_query.message.edit_reply_markup(reply_markup=new_markup)\r\n\r\n\r\n@router.callback_query(lambda c: c.data.startswith(\"select_day\"))\r\nasync def select_day(callback_query: CallbackQuery):\r\n    _, year, month, day = callback_query.data.split(\":\")\r\n    await callback_query.message.edit_text(\r\n        f\"Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\\nВыбери тип проверки:\",\r\n        reply_markup=await kb.choose_parameters_task(f'{day}-{month}-{year}'))\r\n\r\n\r\n@router.callback_query((lambda c: c.data.startswith('verif')))\r\nasync def choose_verification(callback_query: CallbackQuery, state: FSMContext):\r\n    await callback_query.answer()\r\n    _, verif, deadline_date = callback_query.data.split(':')\r\n    verif = 'Автоматическая проверка' if verif == 'auto' else 'Ручная проверка'\r\n    day, month, year = deadline_date.split('-')\r\n    await state.update_data(verification=verif, deadline=deadline_date)\r\n    await callback_query.message.edit_text(\r\n        f'''Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\\nТип проверки: {verif}\\nФайлы в заданиях:''',\r\n        reply_markup=kb.availability_files_task)\r\n\r\n\r\n@router.callback_query(lambda c: c.data.startswith('availability_files'))\r\nasync def process_availability_files(callback_query: CallbackQuery, state: FSMContext):\r\n    await callback_query.answer()\r\n    availability_files = callback_query.data.split(':')[-1]\r\n    await state.update_data(availability_files=True if availability_files == 'Да' else False)\r\n    current_text = callback_query.message.text\r\n    new_text = current_text + f' {availability_files}'\r\n    await callback_query.message.edit_text(text=new_text, reply_markup=kb.confirm_task)\r\n\r\n\r\n@router.callback_query(lambda c: c.data.startswith('finish_task'))\r\nasync def process_finish_task(callback_query: CallbackQuery, state: FSMContext):\r\n    await callback_query.answer()\r\n    action = callback_query.data.split(':')[-1]\r\n    if action == 'edit_task':\r\n        year = datetime.now().year\r\n        month = datetime.now().month\r\n        await callback_query.message.edit_text(f'Выбери дату дедлайна',\r\n                                               reply_markup=await kb.generate_calendar(year, month))\r\n    elif action == 'confirm_task':\r\n        await callback_query.message.edit_reply_markup(reply_markup=None)\r\n        await callback_query.message.answer('Отправь мне название урока')\r\n        await state.set_state(st.AddTask.get_task_title)\r\n\r\n\r\n@router.callback_query(F.data == 'send_exercise')\r\nasync def process_send_exercise(callback_query: CallbackQuery, state: FSMContext):\r\n    \"\"\"Создаем task. Проверяем, есть ли в задании автопроверка.\"\"\"\r\n    await callback_query.answer()\r\n    state_data = await state.get_data()\r\n    verif = state_data['verification']\r\n    task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['verification'],\r\n                                state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],\r\n                                state_data['deadline'])\r\n    await state.update_data(task_id=task_id)\r\n    exercises = get_exersice()\r\n    if verif == 'Ручная проверка':\r\n        for exercise in exercises:\r\n            exercise_condition = exercise[0]\r\n            await db.add_exercise(task_id, exercise_condition)\r\n    elif verif == 'Автоматическая проверка':\r\n        for exercise in exercises:\r\n            exercise_condition = exercise[0]\r\n            exercise_answer = exercise[1]\r\n            await db.add_exercise(task_id, exercise_condition, exercise_answer)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/callbacks/create_task.py b/callbacks/create_task.py
+--- a/callbacks/create_task.py	(revision 97be1bd65d455853428703a689c7357f7577f346)
++++ b/callbacks/create_task.py	(date 1742199494402)
+@@ -32,13 +32,10 @@
+     await state.set_state(st.AddTask.choose_course)
+     course_name = callback_query.data.split(":")[-1]
+     course_id = await db.get_course_id(course_name)
+-    await state.update_data(course_tittle=course_name)
+-    current_block = (await state.get_data()).get('current_block')
+-    if current_block is None:
+-        current_block = await db.get_blocks(course_id, current=True)
+-        await state.update_data(current_block=current_block)
++    current_block = await db.get_blocks(course_id, current=True)
++    await state.update_data(course_title=course_name, current_block=current_block)
+     await callback_query.message.edit_text(
+-        f'Выбери блок\nТекущий блок на курсе: {current_block}\n\nТекущий выбор: {current_block} блок',
++        f'Выбери блок\n\nТекущий выбор: {current_block} блок',
+         reply_markup=await kb.to_change_block(current_block))
+ 
+ 
+@@ -47,30 +44,41 @@
+         "confirm_block"))
+ async def process_increase_block(callback_query: CallbackQuery, state: FSMContext):
+     await callback_query.answer()
+-    current_block = (await state.get_data()).get('current_block')
+ 
+     action, current_value = callback_query.data.split(":")
+-    choose_block = int(current_value)
++    selected_block = int(current_value)
+ 
+     if action == "increase_block":
+-        choose_block += 1
+-    elif action == "reduce_block" and choose_block != 1:
+-        choose_block -= 1
++        selected_block += 1
++    elif action == "reduce_block" and selected_block != 1:
++        selected_block -= 1
+     elif action == 'confirm_block':
+         state_data = await state.get_data()
+-        course_id = await db.get_course_id(state_data['course_tittle'])
+-        block_id = await db.add_block(course_id, choose_block)
++        course_id = await db.get_course_id(state_data['course_title'])
++        block_id = await db.add_block(course_id, selected_block)
+         year = datetime.now().year
+         month = datetime.now().month
+-        await state.update_data(block_id=block_id, block_number=choose_block)
++        await state.update_data(block_id=block_id, block_number=selected_block)
+         await state.set_state(st.AddTask.choose_options)
+         await callback_query.message.edit_text('Выбери дату дедлайна',
+                                                reply_markup=await kb.generate_calendar(year, month))
++        await callback_query.message.edit_text(
++            f'Твой выбор: {selected_block}\nТекущий блок на курсе: {state_data['current_block']}\n\nНачать новый блок и обновить всем пользователям жизни?')
+ 
+-    new_text = f'Выбери блок\nТекущий блок на курсе: {choose_block}\n\nТекущий выбор: {choose_block} блок'
++    new_text = f'Выбери блок\n\nТекущий выбор: {selected_block} блок'
+     if callback_query.message.text != new_text:
+-        await callback_query.message.edit_text(text=f'Выбери блок\nТекущий блок на курсе: {current_block}\n\nТекущий выбор: {choose_block} блок',
+-                                               reply_markup=await kb.to_change_block(choose_block))
++        await callback_query.message.edit_text(text=f'Выбери блок\n\nТекущий выбор: {selected_block} блок',
++                                               reply_markup=await kb.to_change_block(selected_block))
++
++
++@router.callback_query(lambda c: c.data == 'cancel_update_block' or c.data == 'confirm_new_block')
++async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
++    action = callback_query.data
++    state_data = await state.get_data()
++    if action == 'cancel_update_block':
++        await callback_query.message.edit_text(
++            f'Выбери блок\n\nТекущий выбор: {state_data['current_block']} блок',
++            reply_markup=await kb.to_change_block(state_data['current_block']))
+ 
+ 
+ @router.callback_query(lambda c: c.data.startswith('prev_month') or c.data.startswith('next_month'))
+@@ -144,17 +152,21 @@
+     await callback_query.answer()
+     state_data = await state.get_data()
+     verif = state_data['verification']
+-    task_id = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['verification'],
+-                                state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],
+-                                state_data['deadline'])
+-    await state.update_data(task_id=task_id)
++    task_data = await db.add_task(state_data['task_title'], state_data['block_id'], state_data['verification'],
++                                  state_data['video_id'], state_data['abstract_id'], state_data['availability_files'],
++                                  state_data['deadline'])
++    await state.update_data(task_id=task_data['task_id'])
+     exercises = get_exersice()
+     if verif == 'Ручная проверка':
+         for exercise in exercises:
+             exercise_condition = exercise[0]
+-            await db.add_exercise(task_id, exercise_condition)
++            await db.add_exercise(task_data['task_id'], exercise_condition)
+     elif verif == 'Автоматическая проверка':
+         for exercise in exercises:
+             exercise_condition = exercise[0]
+             exercise_answer = exercise[1]
+-            await db.add_exercise(task_id, exercise_condition, exercise_answer)
++            await db.add_exercise(task_data['task_id'], exercise_condition, exercise_answer)
++
++    current_date = datetime.now().strftime("%Y-%m-%d")
++    if task_data['block_start'] == current_date:
++        pass
+Index: educatedplatform-3074c57a82e0.json
+===================================================================
+diff --git a/educatedplatform-3074c57a82e0.json b/educatedplatform-3074c57a82e0.json
+deleted file mode 100644
+--- a/educatedplatform-3074c57a82e0.json	(revision 97be1bd65d455853428703a689c7357f7577f346)
++++ /dev/null	(revision 97be1bd65d455853428703a689c7357f7577f346)
+@@ -1,13 +0,0 @@
+-{
+-  "type": "service_account",
+-  "project_id": "educatedplatform",
+-  "private_key_id": "3074c57a82e01cfa3b92ed659cbc43a834806863",
+-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCcM1/Ez7drrgXI\nUSr2XOpkHudsElcsb7tDtWiOAeKtTi9l6S/2O5fi00jTQXXwMKGje3qQ4QBcyk5p\n48+VtJnKkK4LHIcsAXIldhXQyx82VLvtwnp/hfnbcs8KEQ8qxZccwkBVfKpMiGLt\nZQk8nYdPuKsRUq1lbjSRB9RG4C2hL44/whwRE6wzrwBj68jLXbxb+p5M+/GGYdM4\nGA7Vi+1JW1LCg/dywuXtJ6twUgh6+vrbTr5F2jAniWGAYRCeS1gF3cJrU3w6XQn4\n5N18gJA/Ty8FzClc0f6/pDLUcg7GbZgMN6V8sw7+Q3dmWJ9+RH9BqEK26K6km4/q\nFnzxCwJVAgMBAAECggEAAwl7rfW09QbF7YJogbBGTWqNaNxFbiOBAlzDWul9+Q0p\nXkOlr1WyyxH9G0BtVN15MxbKSAlb6rHzSttHVLuVdusPuz8TgL9JcyGD5JKieXm1\nyrZqj9KwzDvD+0fgId6EJObA/fiFziWjuMZrYs6UTDBEwTo4jV2Sb5R1o+glcvoU\nMLP73yuOufHHgJ7Pks33/v/H1v3gjcY7U4eenffORUcDINmxCLOe5O3eexPSJ0Jy\nkJaP0LYlkiW2yGSzPaHy0thLM607VjVrPxLBDNk2whI4eJb5aboKI7yTZJ60o9CU\n6OBcciBadaEyiDQA6uWbfPOC7pCXe6f/JjRUiAOVCQKBgQDVlBXC0qAwUEdx/qYE\n8X+nRfkMN/9w5+dnOH+phSye1iT8fx0nVhOIMu0zutHK0iXnj3Cf2wQ2Z4Vv+aCd\n1JEQtFPsX43mZid4NSqIspoKlhDzIBncY+LUWCJZCaKrbeAOeKT8k9XcYitl3S2p\nOZBUHLR3kPsjgWh26SXS52CmOQKBgQC7OcbaSviz/WuVv6p6jHYa6yiHINih1oXa\nZFvYKZA6fmftuJ07A32seKGMdoHzz8mCL/eNaUlWW3TqONrwyZbT/eOhUKT8c6yp\n0v8QtlwhDVjYVoOj+RgtNjFQInv2GeCD6M01V811tu7mtp1m5OsjcrOg8XzT3Vb/\nctseyxyc/QKBgBDMtCV98dG7DtOdpytuX48lxuA6K2KTKzWIUSphalAYIhKmYQGu\nGJ02/Ed8Y3Ijs42ST9aTILKy0+Ep7oNbrAl3Vb6bCYtc76/Z5r2X5tv8T9r/5Gjc\nhoQTZqhARMZdPymEPd4MNt897ZH2otfTylGDbIKXKdnyHOh1kF8VihmpAoGBAJ65\nNKQLuxycU4D4pIaQXfAkPI+SgRVy0Ld9LX/sfKGaWHFoeaN2Kiz1d7+lGDaiiasd\nDzmLcOkNT+jhmntX6859B2XTAIwlZNP0VNjOQPykXBXMAn4Yxy5NKzFMitrwxS4P\nRylZ7o1FMPPXDUoV+GJs82wWTkUu+HpH3QwWFYPhAoGAK95yVfpeftU9/om/SuZ8\nwzG9oRE1AcB4ehvUCZMNkyzQI9asTm6xREjVBY82ZNqLUODf10ytHz8Iqcy4uV1k\nbZhE+wR/NkmgKBwRB+1v7CvLLR5BloOeop1UxMKORZioAWXl61jFFrHf6fekd2f2\nb8CrtZqqH46VAPpaSuT6/bg=\n-----END PRIVATE KEY-----\n",
+-  "client_email": "sheets-bot-service-account@educatedplatform.iam.gserviceaccount.com",
+-  "client_id": "103583921041237340318",
+-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+-  "token_uri": "https://oauth2.googleapis.com/token",
+-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sheets-bot-service-account%40educatedplatform.iam.gserviceaccount.com",
+-  "universe_domain": "googleapis.com"
+-}
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"72d8baad-2a73-484a-8cc9-4ec8f1a86f25\" name=\"Changes\" comment=\"Добавлена история изменений жизней в базе данных\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/callbacks/create_task.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/callbacks/create_task.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/database.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/database.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/deadline.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/deadline.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/educated_platform.db\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/educated_platform.db\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/handlers/command_menu_student.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/handlers/command_menu_student.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/keyboard.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/keyboard.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/registration.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/registration.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitHubPullRequestSearchHistory\">{\r\n  &quot;lastFilter&quot;: {\r\n    &quot;state&quot;: &quot;OPEN&quot;,\r\n    &quot;assignee&quot;: &quot;IlyaTimchuck&quot;\r\n  }\r\n}</component>\r\n  <component name=\"GithubPullRequestsUISettings\"><![CDATA[{\r\n  \"selectedUrlAndAccountId\": {\r\n    \"url\": \"https://github.com/IlyaTimchuck/EducatedPlatform.git\",\r\n    \"accountId\": \"0e8c499a-e6aa-4e6f-90fb-34acffe04e66\"\r\n  }\r\n}]]></component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 1\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2s0xh0I6YShiUAj4jNGvrY50LiA\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"Python.Unnamed.executor\": \"Run\",\r\n    \"Python.callbacks.executor\": \"Run\",\r\n    \"Python.database.executor\": \"Run\",\r\n    \"Python.google_table.executor\": \"Run\",\r\n    \"Python.main.executor\": \"Run\",\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"RunOnceActivity.git.unshallow\": \"true\",\r\n    \"git-widget-placeholder\": \"master\",\r\n    \"last_opened_file_path\": \"C:/EducatedPlatform\",\r\n    \"settings.editor.selected.configurable\": \"preferences.lookFeel\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RunManager\" selected=\"Python.main\">\r\n    <configuration name=\"Unnamed\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"EducatedPlatform\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"PythonConfigurationType\" factoryName=\"Python\">\r\n      <module name=\"EducatedProject\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"database\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"EducatedPlatform\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/database.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"google_table\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"EducatedPlatform\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/google_table.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"main\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"EducatedPlatform\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/main.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"Tox\" factoryName=\"Tox\">\r\n      <module name=\"EducatedProject\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"docs\" factoryName=\"Docutils task\">\r\n      <module name=\"EducatedProject\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"docutils_input_file\" value=\"\" />\r\n      <option name=\"docutils_output_file\" value=\"\" />\r\n      <option name=\"docutils_params\" value=\"\" />\r\n      <option name=\"docutils_task\" value=\"\" />\r\n      <option name=\"docutils_open_in_browser\" value=\"false\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"docs\" factoryName=\"Sphinx task\">\r\n      <module name=\"EducatedProject\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"docutils_input_file\" value=\"\" />\r\n      <option name=\"docutils_output_file\" value=\"\" />\r\n      <option name=\"docutils_params\" value=\"\" />\r\n      <option name=\"docutils_task\" value=\"\" />\r\n      <option name=\"docutils_open_in_browser\" value=\"false\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"tests\" factoryName=\"Autodetect\">\r\n      <module name=\"EducatedProject\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"_new_additionalArguments\" value=\"&quot;&quot;\" />\r\n      <option name=\"_new_target\" value=\"&quot;&quot;\" />\r\n      <option name=\"_new_targetType\" value=\"&quot;PATH&quot;\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration default=\"true\" type=\"tests\" factoryName=\"Doctests\">\r\n      <module name=\"EducatedProject\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"\" />\r\n      <option name=\"CLASS_NAME\" value=\"\" />\r\n      <option name=\"METHOD_NAME\" value=\"\" />\r\n      <option name=\"FOLDER_NAME\" value=\"\" />\r\n      <option name=\"TEST_TYPE\" value=\"TEST_SCRIPT\" />\r\n      <option name=\"PATTERN\" value=\"\" />\r\n      <option name=\"USE_PATTERN\" value=\"false\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <list>\r\n      <item itemvalue=\"Python.Unnamed\" />\r\n      <item itemvalue=\"Python.database\" />\r\n      <item itemvalue=\"Python.google_table\" />\r\n      <item itemvalue=\"Python.main\" />\r\n    </list>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.main\" />\r\n        <item itemvalue=\"Python.google_table\" />\r\n        <item itemvalue=\"Python.database\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-python-sdk-fc1d50d2d915-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.24978.54\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"72d8baad-2a73-484a-8cc9-4ec8f1a86f25\" name=\"Changes\" comment=\"\" />\r\n      <created>1737606408278</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1737606408278</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"Добавлена история изменений жизней в базе данных\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1741963449435</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1741963449435</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"2\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"Добавлена история изменений жизней в базе данных\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"Добавлена история изменений жизней в базе данных\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 97be1bd65d455853428703a689c7357f7577f346)
++++ b/.idea/workspace.xml	(date 1742199595127)
+@@ -4,15 +4,15 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="Добавлена история изменений жизней в базе данных">
++    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="Изменено добавление блока админом">
++      <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/callbacks/create_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/callbacks/create_task.py" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/deadline.py" beforeDir="false" afterPath="$PROJECT_DIR$/deadline.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/educated_platform.db" beforeDir="false" afterPath="$PROJECT_DIR$/educated_platform.db" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/handlers/command_menu_student.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/command_menu_student.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/educatedplatform-3074c57a82e0.json" beforeDir="false" />
+       <change beforePath="$PROJECT_DIR$/keyboard.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboard.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/registration.py" beforeDir="false" afterPath="$PROJECT_DIR$/registration.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -35,12 +35,12 @@
+     &quot;assignee&quot;: &quot;IlyaTimchuck&quot;
+   }
+ }</component>
+-  <component name="GithubPullRequestsUISettings"><![CDATA[{
+-  "selectedUrlAndAccountId": {
+-    "url": "https://github.com/IlyaTimchuck/EducatedPlatform.git",
+-    "accountId": "0e8c499a-e6aa-4e6f-90fb-34acffe04e66"
+-  }
+-}]]></component>
++  <component name="GithubPullRequestsUISettings">{
++  &quot;selectedUrlAndAccountId&quot;: {
++    &quot;url&quot;: &quot;https://github.com/IlyaTimchuck/EducatedPlatform.git&quot;,
++    &quot;accountId&quot;: &quot;0e8c499a-e6aa-4e6f-90fb-34acffe04e66&quot;
++  }
++}</component>
+   <component name="ProjectColorInfo">{
+   &quot;associatedIndex&quot;: 1
+ }</component>
+@@ -50,20 +50,20 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent"><![CDATA[{
+-  "keyToString": {
+-    "Python.Unnamed.executor": "Run",
+-    "Python.callbacks.executor": "Run",
+-    "Python.database.executor": "Run",
+-    "Python.google_table.executor": "Run",
+-    "Python.main.executor": "Run",
+-    "RunOnceActivity.ShowReadmeOnStart": "true",
+-    "RunOnceActivity.git.unshallow": "true",
+-    "git-widget-placeholder": "master",
+-    "last_opened_file_path": "C:/EducatedPlatform",
+-    "settings.editor.selected.configurable": "preferences.lookFeel"
++  <component name="PropertiesComponent">{
++  &quot;keyToString&quot;: {
++    &quot;Python.Unnamed.executor&quot;: &quot;Run&quot;,
++    &quot;Python.callbacks.executor&quot;: &quot;Run&quot;,
++    &quot;Python.database.executor&quot;: &quot;Run&quot;,
++    &quot;Python.google_table.executor&quot;: &quot;Run&quot;,
++    &quot;Python.main.executor&quot;: &quot;Run&quot;,
++    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
++    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
++    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
++    &quot;last_opened_file_path&quot;: &quot;C:/EducatedPlatform&quot;,
++    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
+   }
+-}]]></component>
++}</component>
+   <component name="RunManager" selected="Python.main">
+     <configuration name="Unnamed" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+       <module name="EducatedPlatform" />
+@@ -293,7 +293,15 @@
+       <option name="project" value="LOCAL" />
+       <updated>1741963449435</updated>
+     </task>
+-    <option name="localTasksCounter" value="2" />
++    <task id="LOCAL-00002" summary="Изменено добавление блока админом">
++      <option name="closed" value="true" />
++      <created>1742134527198</created>
++      <option name="number" value="00002" />
++      <option name="presentableId" value="LOCAL-00002" />
++      <option name="project" value="LOCAL" />
++      <updated>1742134527198</updated>
++    </task>
++    <option name="localTasksCounter" value="3" />
+     <servers />
+   </component>
+   <component name="Vcs.Log.Tabs.Properties">
+@@ -309,6 +317,7 @@
+   </component>
+   <component name="VcsManagerConfiguration">
+     <MESSAGE value="Добавлена история изменений жизней в базе данных" />
+-    <option name="LAST_COMMIT_MESSAGE" value="Добавлена история изменений жизней в базе данных" />
++    <MESSAGE value="Изменено добавление блока админом" />
++    <option name="LAST_COMMIT_MESSAGE" value="Изменено добавление блока админом" />
+   </component>
+ </project>
+\ No newline at end of file
