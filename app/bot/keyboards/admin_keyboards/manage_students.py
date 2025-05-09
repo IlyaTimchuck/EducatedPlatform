@@ -14,12 +14,13 @@ async def mapping_list_users(course_id: int):
     return builder.as_markup()
 
 
-async def get_more_metric():
+async def get_more_metric(course_id: int):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Открыть последний решенный урок',
                               callback_data='open_task')],
         [InlineKeyboardButton(text='Перейти к урокам пользователя',
-                              callback_data='block_list')]
+                              callback_data='block_list')],
+        [InlineKeyboardButton(text='Назад', callback_data=f'course_selection_for_user_metrics:{course_id}')]
     ])
     return keyboard
 

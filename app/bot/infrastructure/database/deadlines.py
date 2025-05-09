@@ -42,7 +42,8 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
             u.real_name,
             t.task_id,
             t.task_title,
-            u.lives
+            u.lives,
+            COALESCE(cd.deadline, t.deadline) AS deadline
         FROM tasks t
         JOIN blocks b ON b.block_id = t.block_id
         JOIN users u ON u.course_id = b.course_id
@@ -51,10 +52,11 @@ async def get_due_tasks_for_timezone(timezone_id: int, current_date: str) -> lis
         WHERE u.timezone_id = ?
           AND u.role = 'student'
           AND COALESCE(cd.deadline, t.deadline) = ?
+          AND u.lives != ?
         GROUP BY u.user_id, t.task_id
         HAVING MAX(s.is_completed) IS NULL OR MAX(s.is_completed) = 0
                 """
-    async with con.execute(query, (timezone_id, current_date)) as cursor:
+    async with con.execute(query, (timezone_id, current_date, 0)) as cursor:
         rows = await cursor.fetchall()
         return [dict(row) for row in rows] if rows else []
 

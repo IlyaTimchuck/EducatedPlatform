@@ -20,5 +20,6 @@ async def process_deleting_user(callback_query: CallbackQuery):
         await callback_query.message.delete()
     else:
         await db.users.delete_all_user_data(user_id)
+        await google_client.delete_deadlines_for_user(user_id)
         await callback_query.answer('Пользователь успешно удален')
         await callback_query.message.delete()

@@ -49,10 +49,17 @@ async def get_today_new_block() -> list:
 async def update_lives_with_new_block(course_id):
     con = get_db()
     await con.execute('UPDATE users SET lives = ? WHERE course_id = ? AND lives != ?', (3, course_id, 0))
-    await con.execute('''
-               DELETE FROM history_of_lives
-               WHERE user_id IN (
-                   SELECT user_id FROM users WHERE course_id = ?
-               )''', (course_id,))
-    await con.execute('INSERT INTO history_of_lives VALUES(?, ?, ?, ?)', ('all_users', None, 3, '+3'))
+    await con.execute('''DELETE FROM history_of_lives
+                         WHERE user_id IN (
+                         SELECT user_id FROM users WHERE course_id = ?)''', (course_id,))
+    cursor = await con.execute("SELECT user_id FROM users WHERE course_id = ?", (course_id,))
+    rows = await cursor.fetchall()
+    if rows:
+        params = [(row['user_id'], None, 3, '+3') for row in rows]
+        await con.executemany(
+            "INSERT INTO history_of_lives "
+            "(user_id, task_id, lives_after_action, action) "
+            "VALUES (?, ?, ?, ?)",
+            params
+        )
     await con.commit()

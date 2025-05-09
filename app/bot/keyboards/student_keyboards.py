@@ -67,11 +67,13 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
             InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),
             InlineKeyboardButton(text='\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))
         builder.adjust(3)
-    if file_work:
-        builder.row(
-            *[InlineKeyboardButton(text='Перейти к отправке файла', callback_data='get_file_work')])
-    elif not admin_connection:
-        builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])
+
+    if not admin_connection:
+        if file_work:
+            builder.row(
+                *[InlineKeyboardButton(text='Перейти к отправке файла', callback_data='get_file_work')])
+        else:
+            builder.row(*[InlineKeyboardButton(text='Завершить выполнение работы', callback_data='complete_homework')])
     builder.row(*[InlineKeyboardButton(text='↩️ Вернуться назад', callback_data='back_to_task')])
     return builder.as_markup()
 

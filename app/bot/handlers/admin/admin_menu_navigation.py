@@ -21,6 +21,10 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
 @router.callback_query(lambda c: c.data.startswith('course_selection_for_user_metrics'))
 async def process_increase_block(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
+    state_data = await state.get_data()
+    if state_data.get('user_id'):
+        state_data.pop('user_id')
+        await state.set_data(state_data)
     course_id = int(callback_query.data.split(":")[-1])
     await state.update_data(course_id=course_id)
     await callback_query.message.edit_text('Выбери пользователя:',
@@ -32,6 +36,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
 async def process_increase_block(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer()
     user_id = int(callback_query.data.split(":")[-1])
+    course_id = await state.get_value('course_id')
     await state.update_data(user_id=user_id, admin_connection=True)
     metrics_user = await db.metrics.get_metric_user(user_id)
     right_answers = metrics_user['right_answers']
@@ -58,4 +63,4 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         else:
             text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
     await callback_query.message.edit_text(text_message,
-                                           reply_markup=await kb.admin_keyboards.manage_students.get_more_metric())
+                                           reply_markup=await kb.admin_keyboards.manage_students.get_more_metric(course_id))

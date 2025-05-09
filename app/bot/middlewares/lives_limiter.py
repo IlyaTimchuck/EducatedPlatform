@@ -34,7 +34,7 @@ class LifeCheckMiddleware(BaseMiddleware):
                     block_message_user.append(event.message_id)
                     block_message = await event.answer(
                         "❌ У вас закончились жизни. Доступ к курсу заблокирован. Обратитесь к администратору.",
-                        reply_markup=kb.command_menu_student.block_button)
+                        reply_markup=kb.student_keyboards.block_button)
                     await state.update_data(blocked_shown=True, block_message_id=block_message.message_id, block_messages_user=block_message_user)
             return
 

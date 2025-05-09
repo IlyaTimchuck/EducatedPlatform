@@ -6,12 +6,13 @@ from datetime import datetime
 
 from app.bot.bot_instance import bot, dp
 from app.bot.infrastructure.api.google_table import google_client
-from app.bot.keyboards.command_menu_student import start_the_task_from_the_reminder
+from app.bot.keyboards.student_keyboards import start_the_task_from_the_reminder
 
 import calendar
 import app.bot.states.state as st
 import app.bot.infrastructure.database as db
 import app.bot.keyboards.admin_keyboards.create_task_keyboards as kb
+from app.bot.keyboards import main_menu
 
 router = Router()
 
@@ -80,12 +81,17 @@ async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
     elif action == 'confirm_new_block':
         year = datetime.now().year
         month = datetime.now().month
+        course_id = state_data['course_id']
         block_id = await db.blocks.create_block(state_data['course_id'], state_data['selected_block'])
         await db.blocks.update_lives_with_new_block(state_data['course_id'])
         await state.update_data(block_id=block_id)
         await state.set_state(st.AddTask.choose_options)
         await callback_query.message.edit_text('Выбери дату дедлайна',
                                                reply_markup=await kb.generate_calendar(year, month))
+        users_by_course = await db.users.get_users_by_course(course_id)
+        updates_for_google_sheets = [(user_data['user_id'], 3) for user_data in users_by_course if
+                                     user_data['lives'] != 0]
+        await google_client.batch_set_lives_for_users(updates_for_google_sheets)
 
 
 @router.callback_query(lambda c: c.data.startswith("select_day"))
@@ -102,7 +108,8 @@ async def choose_verification(callback_query: CallbackQuery, state: FSMContext):
     _, file_work, deadline_date = callback_query.data.split(':')
     file_work = bool(int(file_work))
     day, month, year = deadline_date.split('-')
-    await state.update_data(file_work=file_work, deadline=deadline_date)
+    normalize_deadline = datetime.strptime(deadline_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+    await state.update_data(file_work=file_work, deadline=normalize_deadline)
     await callback_query.message.edit_text(
         f'''Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\nТребовать файл решений: {'Да' if file_work else 'Нет'}\nФайлы в заданиях:''',
         reply_markup=kb.availability_files_task)
@@ -186,20 +193,21 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
         data_in_table = []
         for user_data in users_by_course:
             user_id = user_data['user_id']
-            deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d').strftime('%Y-%m-%d')
+            deadline = datetime.strptime(state_data['deadline'], '%Y-%m-%d')
             data_in_table.append([user_data['real_name'], user_data['telegram_username'], user_data['course_title'],
-                                  state_data['task_title'], deadline, user_data['timezone'], task_id, user_id,
+                                  state_data['task_title'], deadline.strftime('%Y-%m-%d'), user_data['timezone'], task_id, user_id,
                                   '-'])
             notification_about_new_task = await bot.send_message(chat_id=user_id,
-                                                                 text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nЧтобы перейти к нему, жми на кнопку!',
+                                                                 text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nДедлайн: {deadline.strftime('%d.%m.%Y')}\n\nЧтобы перейти к нему, жми на кнопку!',
                                                                  reply_markup=await start_the_task_from_the_reminder(
                                                                      state_data['course_id'],
                                                                      task_id))
             storage_key = StorageKey(bot_id=bot.id, chat_id=user_id, user_id=user_id)
             state = FSMContext(storage=dp.storage, key=storage_key)
             await state.update_data(notification_about_new_task_message_id=notification_about_new_task.message_id)
+        _, keyboard = await main_menu.send_command_menu(callback_query.from_user.id)
+        await callback_query.message.edit_text(text='Урок был успешно загружен', reply_markup=keyboard)
         await google_client.add_deadlines_in_table(data_in_table)
-        await callback_query.message.edit_text(text='Урок был успешно загружен')
     else:
         await callback_query.answer('В таблице не было найдено ни одного задания. Добавь задания и попробуй еще раз',
                                     show_alert=True)

@@ -5,13 +5,13 @@ from .init_db import get_db
 async def add_task(task_title: str, block_id: int, file_work: bool, video_id: str, abstract_id: str,
                    link_files: str | None, deadline: str) -> int:
     con = get_db()
-    await con.execute(
+    cursor = await con.execute(
         '''INSERT INTO tasks (task_title, block_id, file_work, video_id, abstract_id, link_files, deadline)
                                                                     VALUES(?, ?, ?, ?, ?, ?, ?)''',
         (task_title, block_id, file_work, video_id, abstract_id, link_files, deadline))
     await con.commit()
-    task_id = await con.execute('SELECT task_id FROM tasks WHERE video_id = ?', (video_id,))
-    return (await task_id.fetchone())[0]
+    task_id = cursor.lastrowid
+    return task_id
 
 
 async def get_data_task(user_id: int, task_id: int):
@@ -66,16 +66,16 @@ async def get_list_tasks(block_id: int) -> dict:
             return {}
 
 
-async def get_last_task(user_id):
+async def get_last_task(user_id: int) -> dict:
     con = get_db()
     con.row_factory = aiosqlite.Row
     query = '''SELECT u.course_id, t.block_id, t.task_id
-                   FROM users u
-                   JOIN blocks b ON u.course_id = b.course_id
-                   JOIN tasks t ON b.block_id = t.block_id
-                   WHERE u.user_id = ?
-                   ORDER BY t.deadline DESC 
-                   LIMIT 1;'''
+               FROM users u
+               JOIN blocks b ON u.course_id = b.course_id
+               JOIN tasks t ON b.block_id = t.block_id
+               WHERE u.user_id = ?
+               ORDER BY b.block_number DESC
+               LIMIT 1;'''
     async with con.execute(query, (user_id,)) as cursor:
         last_task = await cursor.fetchone()
         return dict(last_task) if last_task else {}

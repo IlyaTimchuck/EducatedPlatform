@@ -7,8 +7,8 @@ import gspread_asyncio
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from gspread.utils import rowcol_to_a1
-
 from app.bot.bot_instance import bot
+from config import ADMIN_USER_ID, GOOGLE_SPREADSHEET_ID, GOOGLE_SHEETS_CREDS_FILE
 import app.bot.infrastructure.database as db
 import app.bot.keyboards as kb
 
@@ -22,7 +22,7 @@ class GoogleSheetsClient:
             creds_file: str,
             spreadsheet_id: str,
             max_retries: int = 2,
-            notify_chat_id: int = 795508218,
+            notify_chat_id: int = ADMIN_USER_ID,
     ) -> None:
         self._agcm = None
         self.spreadsheet = None
@@ -76,7 +76,7 @@ class GoogleSheetsClient:
         await self._ensure_authorized('get_exercise')
         ws = await self.spreadsheet.worksheet('add_task')
         exercises = await ws.get_all_values()
-        await ws.delete_rows(2, len(exercises))
+        # await ws.delete_rows(2, len(exercises))
         return exercises[1:]
 
     async def add_user_in_table(self, real_name: str, telegram_username: str, course_title: str, user_id: int,
@@ -112,11 +112,21 @@ class GoogleSheetsClient:
             return True
         return False
 
+    async def delete_deadlines_for_user(self, user_id):
+        await self._ensure_authorized('delete_deadlines_for_user')
+        ws = await self.spreadsheet.worksheet('deadlines')
+        data = await ws.get_all_values()
+        headers, rows = data[0], data[1:]
+        uid_col = [h.strip().lower() for h in headers].index('user_id') + 1
+        to_delete = [i + 2 for i, row in enumerate(rows) if row[uid_col - 1].strip() == str(user_id)]
+        for row_num in reversed(to_delete):
+            await ws.delete_rows(row_num)
+
     async def batch_set_lives_for_users(self, updates: list[tuple[int, int]]) -> None:
         await self._ensure_authorized('batch_set_lives_for_users')
 
-        worksheet = await self.spreadsheet.worksheet('users')
-        all_values = await worksheet.get_all_values()
+        ws = await self.spreadsheet.worksheet('users')
+        all_values = await ws.get_all_values()
 
         headers = [h.strip().lower() for h in all_values[0]]
         col_user_id = headers.index('user_id') + 1
@@ -139,10 +149,55 @@ class GoogleSheetsClient:
             })
 
         if batch_data:
-            await worksheet.batch_update(
+            await ws.batch_update(
                 batch_data,
                 value_input_option='USER_ENTERED'
             )
+
+    async def batch_set_deadlines_for_users(self, updates: list[tuple[int, int, str]]):
+        await self._ensure_authorized('batch_set_deadline_for_users')
+        ws = await self.spreadsheet.worksheet('deadlines')
+        all_values = await ws.get_all_values()
+        headers = [h.strip().lower() for h in all_values[0]]
+        col_user_id = headers.index('user_id') + 1
+        col_task_id = headers.index('task_id') + 1
+        col_deadline = headers.index('deadline') + 1
+        id_to_row = {
+            (row[col_user_id - 1], row[col_task_id - 1]): idx
+            for idx, row in enumerate(all_values[1:], start=2)
+        }
+        existing_keys = set(id_to_row.keys())
+        updated_keys = {(str(u), str(t)) for u, t, _ in updates}
+        batch_data = []
+        for user_id, task_id, new_deadline in updates:
+            key = (str(user_id), str(task_id))
+            row_num = id_to_row.get(key)
+            if row_num:
+                cell = rowcol_to_a1(row_num, col_deadline)
+                batch_data.append({
+                    'range': cell,
+                    'values': [[new_deadline]],
+                })
+        if batch_data:
+            await ws.batch_update(
+                batch_data, value_input_option='USER_ENTERED'
+            )
+        to_delete = existing_keys - updated_keys
+        if to_delete:
+            sheet_id = ws.ws.id
+            requests = []
+            for row_num in sorted((id_to_row[k] for k in to_delete), reverse=True):
+                requests.append({
+                    "deleteDimension": {
+                        "range": {
+                            "sheetId": sheet_id,
+                            "dimension": "ROWS",
+                            "startIndex": row_num - 1,
+                            "endIndex": row_num
+                        }
+                    }
+                })
+            await self.spreadsheet.batch_update({"requests": requests})
 
 
 async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) -> None:
@@ -165,7 +220,6 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                         status = row_dict.get('status', '').strip().lower()
                         update_time = row_dict.get('update_time', '-').strip()
                         uid = int(row_dict.get('user_id', '0'))
-
                         # 1) удаление пользователя
                         if status == 'deactivate':
                             username = row_dict.get('telegram_username', '')
@@ -178,8 +232,6 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                                 ),
                                 reply_markup=await kb.admin_keyboards.manage_students.confirm_deleting_user(uid)
                             )
-
-                        # 2) изменение жизней
                         elif update_time != '-':
                             lives_str = row_dict.get('lives', '0').strip()
                             new_lives = int(lives_str[0]) if lives_str and lives_str[0].isdigit() else 0
@@ -210,8 +262,9 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                         if update_time != '-' and uid_str.isdigit() and tid_str.isdigit():
                             uid = int(uid_str)
                             tid = int(tid_str)
-                            deadline = row_dict.get('deadline', '').strip()
-
+                            raw = row_dict.get('deadline', '').strip()
+                            day, month, year = raw.split('.')
+                            deadline = f'{year}-{month}-{day}'
                             logger.info(f"Updating deadline for {uid}, task {tid}: {deadline}")
                             await db.deadlines.change_deadline(uid, tid, deadline)
                             col_upd = normalized_dead.index('update_time') + 1
@@ -254,7 +307,4 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
             await asyncio.sleep(60)
 
 
-google_client = GoogleSheetsClient(
-    creds_file='educatedplatform-a40aded26c1c.json',
-    spreadsheet_id='1dRVN0o5TVgZ7zfcPZOej8VCq508xeWfNhPLexWTINWE'
-)
+google_client = GoogleSheetsClient(creds_file=GOOGLE_SHEETS_CREDS_FILE, spreadsheet_id=GOOGLE_SPREADSHEET_ID)

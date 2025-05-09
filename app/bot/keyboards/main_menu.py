@@ -7,12 +7,11 @@ async def send_command_menu(user_id: int):
     if user_data['role'] == 'student':
         command_menu = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Список занятий', callback_data='block_list')],
-            [InlineKeyboardButton(text='Открыть последнее занятие', callback_data='open_task')],
+            [InlineKeyboardButton(text='Продолжить обучение', callback_data='open_task')],
             [InlineKeyboardButton(text='Посмотреть историю жизней', callback_data='list_lives')],
         ])
         lives = user_data['lives']
         deadline_today = await db.deadlines.get_today_deadline_for_keyboard(user_id)
-        print(deadline_today)
         text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
         if deadline_today:
             text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}\n'

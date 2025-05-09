@@ -8,7 +8,7 @@ from app.bot.bot_instance import bot
 import app.bot.states.state as st
 
 import app.bot.infrastructure.database as db
-import app.bot.keyboards.command_menu_student as kb
+import app.bot.keyboards.student_keyboards as kb
 
 router = Router()
 
@@ -158,7 +158,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     await state.set_data(state_data)
     await callback_query.bot.edit_message_media(
         chat_id=callback_query.message.chat.id,
-        message_id=state_data['task_message_id'],
+        message_id=state_data['command_menu_id'],
         media=InputMediaVideo(
             media=task_data['video_id'],
             caption=text_message),

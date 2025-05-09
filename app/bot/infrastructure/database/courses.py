@@ -38,5 +38,5 @@ async def get_course_title(course_id: int) -> str:
 
 async def change_course_name(new_course_name: str, course_id: int) -> None:
     con = get_db()
-    await con.execute('UPDATE courses SET course_name = ? WHERE course_id = ?', (new_course_name, course_id))
+    await con.execute('UPDATE courses SET course_title = ? WHERE course_id = ?', (new_course_name, course_id))
     await con.commit()

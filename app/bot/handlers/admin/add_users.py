@@ -34,7 +34,7 @@ async def process_get_course_tittle(message: Message, state: FSMContext):
     course_name = message.text
     await state.update_data(course_title=course_name)
     course_id = await db.courses.create_course(message.text)
-    await google_client.add_course_in_table([course_name, course_id])
+    await google_client.add_course_in_table([course_name, course_id, '-'])
     await message.answer('Отправь мне список пользователей')
     await state.set_state(st.AddUsers.get_list_users)
 
