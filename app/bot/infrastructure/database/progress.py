@@ -5,16 +5,16 @@ from .init_db import get_db
 from datetime import datetime, date
 
 
-async def get_progress_user(task_id: int, session_id: int = None) -> dict:
+async def get_progress_user(user_id: int, task_id: int, session_id: int = None) -> dict:
     con = get_db()
     con.row_factory = aiosqlite.Row
     query = """
     SELECT e.exercise_id, lp.input_answer, lp.right_answer
     FROM learning_progress AS lp
     JOIN exercises AS e ON lp.exercise_id = e.exercise_id
-    WHERE e.task_id = ?
+    WHERE e.task_id = ? AND lp.user_id = ?
     """
-    params = (task_id,)
+    params = (task_id, user_id)
     if session_id is not None:
         query += " AND lp.session_id = ?"
         params += (session_id,)

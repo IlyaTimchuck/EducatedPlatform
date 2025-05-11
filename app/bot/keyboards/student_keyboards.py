@@ -11,7 +11,7 @@ async def mapping_block_list(user_id: int, course_id: int, admin_connection: boo
         builder.row(InlineKeyboardButton(text=f"{block} блок",
                                          callback_data=f"open_block:{data[block]}"))
     builder.row(*[InlineKeyboardButton(text='Назад ↩️',
-                                       callback_data=f"open_metric_user:{user_id}' if admin_connection else 'back_student")])
+                                       callback_data=f"open_metric_user:{user_id}" if admin_connection else 'back_student')])
     return builder.as_markup()
 
 
@@ -80,6 +80,7 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
 
 async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    user_id = state_data.get('user_id')
     task_id = state_data['task_data']['task_id']
     homework = state_data['homework']
     if decides:
@@ -91,7 +92,7 @@ async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeybo
                 callback_data=f"open_exercise:{exercise_number}"
             ))
     else:
-        progress_solving = await db.progress.get_progress_user(task_id)
+        progress_solving = await db.progress.get_progress_user(user_id, task_id)
         for exercise_number in homework:
             if exercise_number in progress_solving:
                 status = '⌛' if progress_solving[exercise_number]['input_answer'] is None else \

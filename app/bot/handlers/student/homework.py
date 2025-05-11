@@ -102,7 +102,7 @@ async def getting_work_file(message: Message, state: FSMContext):
         file_work_id = message.document.file_id
         user_progress = ''
         for exercise_num in range(1, len(state_data.get('homework')) + 1):
-            solve_user = state_data['results'].get(exercise_num)
+            solve_user = state_data.get('results', {}).get(exercise_num)
             if solve_user:
                 user_progress += f"{exercise_num}) {solve_user['input_answer']}{solve_user['status_input_answer']}\n"
             else:
@@ -118,7 +118,8 @@ async def getting_work_file(message: Message, state: FSMContext):
         print(e)
         sent_message = await message.answer(
             'Ошибка чтения файла. Проверь, правильный ли формат файла ты используешь. Отправь мне файл повторно')
-        messages_getting_file_work += [sent_message.message_id]
+        messages_getting_file_work += [sent_message.message_id, message.message_id]
+        await state.update_data(messages_getting_file_work=messages_getting_file_work)
         await state.set_state(st.MappingExercise.getting_work_file)
 
 

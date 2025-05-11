@@ -147,8 +147,8 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     deadline = date_obj.strftime('%d.%m.%Y')
     text_message = f"Название урока: {task_data['task_title']}\nДедлайн: {deadline}"
     session = await db.sessions.get_last_session(user_id, task_id)
-    progress_user = await db.progress.get_progress_user(task_id, session['session_id']) if session else \
-        await db.progress.get_progress_user(task_id)
+    progress_user = await db.progress.get_progress_user(user_id, task_id, session['session_id']) if session else \
+        await db.progress.get_progress_user(user_id, task_id)
     if progress_user:
         await state.update_data(results=progress_user)
         right_answers = len(
@@ -191,7 +191,7 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.edit_reply_markup(reply_markup=None)
     state_data = await state.get_data()
     admin_connection = state_data.get('admin_connection')
-    file_work = state_data['task_data'].get('link_files')
+    file_work = state_data['task_data'].get('file_work')
     homework = await db.tasks.get_list_exercises(state_data['task_data']['task_id'])
     await state.set_state(st.MappingExercise.solving_homework)
     messages_getting_file_work = state_data.get('messages_getting_file_work')
