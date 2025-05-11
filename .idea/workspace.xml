@@ -4,20 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="исправлены кавчки в main_menu.py для корректной работы на сервере">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/command.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/command.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/registration.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/registration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/create_task_keyboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/create_task_keyboards.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" afterDir="false" />
-    </list>
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="произведена замена всех одинарных кавычек на двойные в f-строках для корректной работы кода на чисто python" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -378,7 +365,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746965751192</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="произведена замена всех одинарных кавычек на двойные в f-строках для корректной работы кода на чисто python">
+      <option name="closed" value="true" />
+      <created>1746975754714</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1746975754714</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -400,6 +395,7 @@
     <MESSAGE value="добавлен файл с зависимостями" />
     <MESSAGE value="убран файл базы данных из актуальной версии" />
     <MESSAGE value="исправлены кавчки в main_menu.py для корректной работы на сервере" />
-    <option name="LAST_COMMIT_MESSAGE" value="исправлены кавчки в main_menu.py для корректной работы на сервере" />
+    <MESSAGE value="произведена замена всех одинарных кавычек на двойные в f-строках для корректной работы кода на чисто python" />
+    <option name="LAST_COMMIT_MESSAGE" value="произведена замена всех одинарных кавычек на двойные в f-строках для корректной работы кода на чисто python" />
   </component>
 </project>
