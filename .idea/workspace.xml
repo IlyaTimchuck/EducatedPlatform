@@ -5,9 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="бот отправляется на сервер. добавлено .env окружение для всей скрытой информации. все токены заменены. поправлены следующие моменты:&#10;1) убрать кнопку отправить файл для админа&#10;2) добавить делдайн на уведомление об новом уроке&#10;3) к сообщению об добавлении урока добавить командное меню админа&#10;4) добавить&#10;&#10;1) /command_menu не удаляет homework&#10;2) последнее занятие открывается некорректно&#10;3) при обновлении жизней с новым блоком данные не актуализируются&#10;&#10;1) заменить название кнопки приступить к выполнению&#10;2) неправильный процент в метриках&#10;3) добавить удаление всех данных пользователя с таблиц">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/educated_platform.db-shm" beforeDir="false" afterPath="$PROJECT_DIR$/data/educated_platform.db-shm" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
