@@ -150,7 +150,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.answer(
         'Домашняя работа была принята' if is_completed else 'Порог не был пройден. Нужно минимум 90%',
         show_alert=False if is_completed else True)
-    text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'
+    text_message = f"Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}"
     link_files = task_data.get('link_files', None)
     if link_files:
         text_message += f"\n\nФайлы к домашней работе: {link_files}"
