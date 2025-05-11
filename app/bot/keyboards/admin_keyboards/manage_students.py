@@ -9,7 +9,7 @@ async def mapping_list_users(course_id: int):
     list_users = await db.users.get_users_by_course(course_id)
     for user_data in list_users:
         builder.row(InlineKeyboardButton(text=user_data['real_name'],
-                                         callback_data=f'open_metric_user:{user_data['user_id']}'))
+                                         callback_data=f"open_metric_user:{user_data['user_id']}"))
     builder.row(InlineKeyboardButton(text='Назад', callback_data='get_list_courses'))
     return builder.as_markup()
 
@@ -20,15 +20,15 @@ async def get_more_metric(course_id: int):
                               callback_data='open_task')],
         [InlineKeyboardButton(text='Перейти к урокам пользователя',
                               callback_data='block_list')],
-        [InlineKeyboardButton(text='Назад', callback_data=f'course_selection_for_user_metrics:{course_id}')]
+        [InlineKeyboardButton(text='Назад', callback_data=f"course_selection_for_user_metrics:{course_id}")]
     ])
     return keyboard
 
 
 async def confirm_deleting_user(user_id: int) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Отменить', callback_data=f'cancel_deleting:{user_id}'),
-         InlineKeyboardButton(text='Подтвердить', callback_data=f'confirm_deleting:{user_id}')]
+        [InlineKeyboardButton(text='Отменить', callback_data=f"cancel_deleting:{user_id}"),
+         InlineKeyboardButton(text='Подтвердить', callback_data=f"confirm_deleting:{user_id}")]
     ])
     return keyboard
 

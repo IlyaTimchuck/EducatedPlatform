@@ -6,8 +6,8 @@ import calendar
 
 async def choose_parameters_task(deadline) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text='Нет', callback_data=f'verif:0:{deadline}'),
-                          InlineKeyboardButton(text='Да', callback_data=f'verif:1:{deadline}')]
+        inline_keyboard=[[InlineKeyboardButton(text='Нет', callback_data=f"verif:0:{deadline}"),
+                          InlineKeyboardButton(text='Да', callback_data=f"verif:1:{deadline}")]
                          ])
     return keyboard
 
@@ -25,16 +25,16 @@ async def generate_calendar(year: int, month: int) -> InlineKeyboardMarkup:
     for week in month_calendar:
         builder.row(*[
             InlineKeyboardButton(text=str(day) if day != 0 else ' ',
-                                 callback_data=f'select_day:{year}:{month}:{day}')
+                                 callback_data=f"select_day:{year}:{month}:{day}")
             for day in week])
     return builder.as_markup()
 
 
 async def to_change_block(current_block):
     change_block_buttons = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Предыдущий блок', callback_data=f'reduce_block:{current_block}'),
-         InlineKeyboardButton(text='Следующий блок', callback_data=f'increase_block:{current_block}')],
-        [InlineKeyboardButton(text='Подтвердить выбор', callback_data=f'confirm_block:{current_block}')],
+        [InlineKeyboardButton(text='Предыдущий блок', callback_data=f"reduce_block:{current_block}"),
+         InlineKeyboardButton(text='Следующий блок', callback_data=f"increase_block:{current_block}")],
+        [InlineKeyboardButton(text='Подтвердить выбор', callback_data=f"confirm_block:{current_block}")],
         [InlineKeyboardButton(text='Назад', callback_data='back_admin')]
     ])
     return change_block_buttons

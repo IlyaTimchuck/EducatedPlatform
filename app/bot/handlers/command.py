@@ -34,7 +34,7 @@ async def start(message: types.Message, state: FSMContext):
         await state.set_data(state_data)
     else:
         sent_message = await message.answer(
-            f'Привет! Чтобы зарегистрироваться на курс мне необходимо знать твое имя и фамилию. Отправь мне их сообщением. \n\nНапример: Иван Иванов')
+            'Привет! Чтобы зарегистрироваться на курс мне необходимо знать твое имя и фамилию. Отправь мне их сообщением. \n\nНапример: Иван Иванов')
         await state.set_state(st.Registration.get_name_user)
         await state.update_data(reg_msg_for_deletion=[sent_message.message_id, message_user])
 

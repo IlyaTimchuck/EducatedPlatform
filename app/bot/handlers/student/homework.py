@@ -53,7 +53,7 @@ async def record_answer(message: Message, state: FSMContext):
     input_answer = message.text
     result_answer = (right_answer == input_answer)
     status_input_answer = '✅' if result_answer else '❌'
-    text_message = f'{condition}\nТвой ответ: {input_answer} {status_input_answer}'
+    text_message = f"{condition}\nТвой ответ: {input_answer} {status_input_answer}"
     answers = state_data.get('results', {})
     file_work = state_data['task_data'].get('file_work')
     prev_status = answers.get(current_exercise, {}).get('status_input_answer')
@@ -110,7 +110,7 @@ async def getting_work_file(message: Message, state: FSMContext):
         await bot.edit_message_reply_markup(chat_id=message.from_user.id, message_id=state_data['homework_message_id'],
                                             reply_markup=None)
         sent_message = await message.answer(
-            text=f'Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?',
+            text=f"Файл успешно загружен\nТвои ответы:\n{user_progress}\nОтправить все и завершить домашнюю работу?",
             reply_markup=kb.confirm_completing_work_file)
         messages_getting_file_work += [message_user_id, sent_message.message_id]
         await state.update_data(file_work_id=file_work_id, messages_getting_file_work=messages_getting_file_work)
@@ -153,7 +153,7 @@ async def completing_homework(callback_query: CallbackQuery, state: FSMContext):
     text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {task_data['deadline']}\nДомашняя работа: {quotient}% {'✅' if quotient >= 90 else '❌'}'
     link_files = task_data.get('link_files', None)
     if link_files:
-        text_message += f'\n\nФайлы к домашней работе: {link_files}'
+        text_message += f"\n\nФайлы к домашней работе: {link_files}"
     message_abstract_id = state_data.get('message_abstract_id', False)
     await state.set_data(state_data)
     await callback_query.bot.edit_message_media(

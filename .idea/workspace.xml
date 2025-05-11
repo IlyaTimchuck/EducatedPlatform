@@ -4,7 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="убран файл базы данных из актуальной версии" />
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="исправлены кавчки в main_menu.py для корректной работы на сервере">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/create_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/command.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/command.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/registration.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/registration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/api/google_table.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/create_task_keyboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/create_task_keyboards.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/admin_keyboards/manage_students.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -27,12 +40,12 @@
     &quot;assignee&quot;: &quot;IlyaTimchuck&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/IlyaTimchuck/EducatedPlatform.git&quot;,
-    &quot;accountId&quot;: &quot;0e8c499a-e6aa-4e6f-90fb-34acffe04e66&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/IlyaTimchuck/EducatedPlatform",
+    "accountId": "0673eef9-6c6a-4377-9177-4560af06ab4a"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -264,7 +277,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-fc1d50d2d915-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.24978.54" />
+        <option value="bundled-python-sdk-6a3326d57233-c546a90a8094-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.24807.21" />
       </set>
     </attachedChunks>
   </component>
@@ -357,7 +370,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746963935812</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="исправлены кавчки в main_menu.py для корректной работы на сервере">
+      <option name="closed" value="true" />
+      <created>1746965751192</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1746965751192</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -378,6 +399,7 @@
     <MESSAGE value="бот отправляется на сервер. добавлено .env окружение для всей скрытой информации. все токены заменены. поправлены следующие моменты:&#10;1) убрать кнопку отправить файл для админа&#10;2) добавить делдайн на уведомление об новом уроке&#10;3) к сообщению об добавлении урока добавить командное меню админа&#10;4) добавить&#10;&#10;1) /command_menu не удаляет homework&#10;2) последнее занятие открывается некорректно&#10;3) при обновлении жизней с новым блоком данные не актуализируются&#10;&#10;1) заменить название кнопки приступить к выполнению&#10;2) неправильный процент в метриках&#10;3) добавить удаление всех данных пользователя с таблиц" />
     <MESSAGE value="добавлен файл с зависимостями" />
     <MESSAGE value="убран файл базы данных из актуальной версии" />
-    <option name="LAST_COMMIT_MESSAGE" value="убран файл базы данных из актуальной версии" />
+    <MESSAGE value="исправлены кавчки в main_menu.py для корректной работы на сервере" />
+    <option name="LAST_COMMIT_MESSAGE" value="исправлены кавчки в main_menu.py для корректной работы на сервере" />
   </component>
 </project>

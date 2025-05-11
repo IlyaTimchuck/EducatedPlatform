@@ -84,7 +84,7 @@ class GoogleSheetsClient:
         await self._ensure_authorized('add_user_in_table')
         ws = await self.spreadsheet.worksheet('users')
         row = [real_name, telegram_username, course_title, str(user_id), timezone, date_of_joining,
-               role, 'active', f'{lives}❤️', '-', ]
+               role, 'active', f"{lives}❤️", '-', ]
         await ws.append_row(row)
 
     async def add_deadlines_in_table(self, data: list[list]) -> None:
@@ -145,7 +145,7 @@ class GoogleSheetsClient:
             cell_a1 = rowcol_to_a1(row_num, col_lives)
             batch_data.append({
                 'range': cell_a1,
-                'values': [[f'{new_lives}❤️']],
+                'values': [[f"{new_lives}❤️"]],
             })
 
         if batch_data:
@@ -238,7 +238,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                             logger.info(f"Updating lives for user {uid}: {new_lives}")
                             await db.deadlines.update_lives_for_user(uid, new_lives)
                             col_lives = normalized_users.index('lives') + 1
-                            await ws_users.update_cell(i, col_lives, f'{new_lives}❤️')
+                            await ws_users.update_cell(i, col_lives, f"{new_lives}❤️")
                             col_upd = normalized_users.index('update_time') + 1
                             await ws_users.update_cell(i, col_upd, '-')
 
@@ -264,7 +264,7 @@ async def setup_google_polling_loop(google_sheets_client: GoogleSheetsClient) ->
                             tid = int(tid_str)
                             raw = row_dict.get('deadline', '').strip()
                             day, month, year = raw.split('.')
-                            deadline = f'{year}-{month}-{day}'
+                            deadline = f"{year}-{month}-{day}"
                             logger.info(f"Updating deadline for {uid}, task {tid}: {deadline}")
                             await db.deadlines.change_deadline(uid, tid, deadline)
                             col_upd = normalized_dead.index('update_time') + 1

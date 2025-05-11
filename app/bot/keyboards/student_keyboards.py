@@ -8,10 +8,10 @@ async def mapping_block_list(user_id: int, course_id: int, admin_connection: boo
     data = await db.blocks.get_blocks(course_id)
     builder = InlineKeyboardBuilder()
     for block in data:
-        builder.row(InlineKeyboardButton(text=f'{block} блок',
-                                         callback_data=f'open_block:{data[block]}'))
+        builder.row(InlineKeyboardButton(text=f"{block} блок",
+                                         callback_data=f"open_block:{data[block]}"))
     builder.row(*[InlineKeyboardButton(text='Назад ↩️',
-                                       callback_data=f'open_metric_user:{user_id}' if admin_connection else 'back_student')])
+                                       callback_data=f"open_metric_user:{user_id}' if admin_connection else 'back_student")])
     return builder.as_markup()
 
 
@@ -22,9 +22,9 @@ async def mapping_list_tasks(user_id: int, block_id: int) -> InlineKeyboardMarku
         task_id = tasks[task_title]
         task_status = await db.progress.mapping_task_status(user_id, task_id)
         builder.row(
-            *[InlineKeyboardButton(text=f'{task_title}{task_status}',
-                                   callback_data=f'open_task:{task_id}:0')])
-    builder.row(*[InlineKeyboardButton(text='Назад ↩️', callback_data=f'block_list')])
+            *[InlineKeyboardButton(text=f"{task_title}{task_status}",
+                                   callback_data=f"open_task:{task_id}:0")])
+    builder.row(*[InlineKeyboardButton(text='Назад ↩️', callback_data='block_list')])
     return builder.as_markup()
 
 
@@ -42,7 +42,7 @@ async def mapping_task(block_id, file_work_info: dict[bool:bool],
             [InlineKeyboardButton(text='Получить свой рабочий файл', callback_data='send_file_work')]
         )
     keyboard_buttons.append([
-        InlineKeyboardButton(text='↩️ Назад', callback_data=f'open_block_from_homework:{block_id}'),
+        InlineKeyboardButton(text='↩️ Назад', callback_data=f"open_block_from_homework:{block_id}"),
         InlineKeyboardButton(text='В главное меню 🏠', callback_data='back_student')
     ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
@@ -53,19 +53,19 @@ async def mapping_homework(quantity_exercise: int, current_exercise: int, file_w
     builder = InlineKeyboardBuilder()
     if current_exercise == 1:
         builder.add(
-            InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),
-            InlineKeyboardButton(text='\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))
+            InlineKeyboardButton(text=f"{current_exercise}/{quantity_exercise}", callback_data='open_list_exercises'),
+            InlineKeyboardButton(text='\u2192', callback_data=f"next_exercise:{current_exercise + 1}"))
         builder.adjust(2)
     elif current_exercise == quantity_exercise:
-        builder.add(InlineKeyboardButton(text="\u2190", callback_data=f'prev_exercise:{current_exercise - 1}'),
-                    InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}',
+        builder.add(InlineKeyboardButton(text="\u2190", callback_data=f"prev_exercise:{current_exercise - 1}"),
+                    InlineKeyboardButton(text=f"{current_exercise}/{quantity_exercise}",
                                          callback_data='open_list_exercises'))
         builder.adjust(2)
     else:
         builder.add(
-            InlineKeyboardButton(text="\u2190", callback_data=f'prev_exercise:{current_exercise - 1}'),
-            InlineKeyboardButton(text=f'{current_exercise}/{quantity_exercise}', callback_data='open_list_exercises'),
-            InlineKeyboardButton(text='\u2192', callback_data=f'next_exercise:{current_exercise + 1}'))
+            InlineKeyboardButton(text="\u2190", callback_data=f"prev_exercise:{current_exercise - 1}"),
+            InlineKeyboardButton(text=f"{current_exercise}/{quantity_exercise}", callback_data='open_list_exercises'),
+            InlineKeyboardButton(text='\u2192', callback_data=f"next_exercise:{current_exercise + 1}"))
         builder.adjust(3)
 
     if not admin_connection:
@@ -87,8 +87,8 @@ async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeybo
         for exercise_number in homework:
             result_status = results.get(exercise_number, {}).get('status_input_answer', '⌛')
             builder.add(InlineKeyboardButton(
-                text=f'{exercise_number} задание {result_status}',
-                callback_data=f'open_exercise:{exercise_number}'
+                text=f"{exercise_number} задание {result_status}",
+                callback_data=f"open_exercise:{exercise_number}"
             ))
     else:
         progress_solving = await db.progress.get_progress_user(task_id)
@@ -100,8 +100,8 @@ async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeybo
                 status = '⌛'  # Или любой другой значок, если данных нет
 
             builder.add(InlineKeyboardButton(
-                text=f'{exercise_number} задание {status}',
-                callback_data=f'open_exercise:{exercise_number}'
+                text=f"{exercise_number} задание {status}",
+                callback_data=f"open_exercise:{exercise_number}"
             ))
 
     builder.adjust(1)
@@ -111,7 +111,7 @@ async def mapping_list_exercises(state_data: dict, decides: bool) -> InlineKeybo
 async def start_the_task_from_the_reminder(course_id: int, task_id: int) -> InlineKeyboardMarkup:
     button = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Приступить к выполнению задания',
-                              callback_data=f'open_task:{course_id}:{task_id}:1')]
+                              callback_data=f"open_task:{course_id}:{task_id}:1")]
     ])
     return button
 

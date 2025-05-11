@@ -20,7 +20,7 @@ router = Router()
 @router.callback_query(F.data == 'add_lesson')
 async def process_add_lesson(callback_query: CallbackQuery):
     await callback_query.answer()
-    await callback_query.message.edit_text(f'Для добавления домашнего задания выбери курс',
+    await callback_query.message.edit_text(f"Для добавления домашнего задания выбери курс",
                                            reply_markup=await kb.choose_course_inline(for_add_task=True))
 
 
@@ -32,7 +32,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     current_block = await db.blocks.get_blocks(course_id, current=True)
     await state.update_data(course_id=course_id, current_block=current_block)
     await callback_query.message.edit_text(
-        f'Выбери блок\n\nТекущий выбор: {current_block} блок',
+        f"Выбери блок\n\nТекущий выбор: {current_block} блок",
         reply_markup=await kb.to_change_block(current_block))
 
 
@@ -62,9 +62,9 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
             await state.update_data(block_id=block_id)
         else:
             await callback_query.message.edit_text(
-                f'Твой выбор: {selected_block}\nТекущий блок на курсе: {state_data['current_block']}\n\nНачать новый блок и обновить всем пользователям жизни?',
+                f"Твой выбор: {selected_block}\nТекущий блок на курсе: {state_data['current_block']}\n\nНачать новый блок и обновить всем пользователям жизни?",
                 reply_markup=kb.confirm_new_block_keyboard)
-    new_text = f'Выбери блок\n\nТекущий выбор: {selected_block} блок'
+    new_text = f"Выбери блок\n\nТекущий выбор: {selected_block} блок"
     if callback_query.message.text != new_text:
         await callback_query.message.edit_text(text=new_text,
                                                reply_markup=await kb.to_change_block(selected_block))
@@ -76,7 +76,7 @@ async def confirm_new_block(callback_query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     if action == 'cancel_update_block':
         await callback_query.message.edit_text(
-            f'Выбери блок\n\nТекущий выбор: {state_data['current_block']} блок',
+            f"Выбери блок\n\nТекущий выбор: {state_data['current_block']} блок",
             reply_markup=await kb.to_change_block(state_data['current_block']))
     elif action == 'confirm_new_block':
         year = datetime.now().year
@@ -111,7 +111,7 @@ async def choose_verification(callback_query: CallbackQuery, state: FSMContext):
     normalize_deadline = datetime.strptime(deadline_date, "%Y-%m-%d").strftime("%Y-%m-%d")
     await state.update_data(file_work=file_work, deadline=normalize_deadline)
     await callback_query.message.edit_text(
-        f'''Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\nТребовать файл решений: {'Да' if file_work else 'Нет'}\nФайлы в заданиях:''',
+        f"Дата дедлайна: {day} {calendar.month_name[int(month)]} {year}\nТребовать файл решений: {'Да' if file_work else 'Нет'}\nФайлы в заданиях:",
         reply_markup=kb.availability_files_task)
 
 
@@ -198,7 +198,7 @@ async def process_send_exercise(callback_query: CallbackQuery, state: FSMContext
                                   state_data['task_title'], deadline.strftime('%Y-%m-%d'), user_data['timezone'], task_id, user_id,
                                   '-'])
             notification_about_new_task = await bot.send_message(chat_id=user_id,
-                                                                 text=f'Привет! Только что был добавлен новый урок: {state_data['task_title']}\nДедлайн: {deadline.strftime('%d.%m.%Y')}\n\nЧтобы перейти к нему, жми на кнопку!',
+                                                                 text=f"Привет! Только что был добавлен новый урок: {state_data['task_title']}\nДедлайн: {deadline.strftime('%d.%m.%Y')}\n\nЧтобы перейти к нему, жми на кнопку!",
                                                                  reply_markup=await start_the_task_from_the_reminder(
                                                                      state_data['course_id'],
                                                                      task_id))

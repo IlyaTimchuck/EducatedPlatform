@@ -12,16 +12,16 @@ async def send_command_menu(user_id: int):
         ])
         lives = user_data['lives']
         deadline_today = await db.deadlines.get_today_deadline_for_keyboard(user_id)
-        text_message = f'Текущее количество жизней: {lives * "❤️"}\n'
+        text_message = f"Текущее количество жизней: {lives * "❤️"}\n"
         if deadline_today:
-            text_message += f'Дедлайны сегодня: {', '.join(task["task_title"] for task in deadline_today)}\n'
+            text_message += f"Дедлайны сегодня: {', '.join(task["task_title"] for task in deadline_today)}\n"
         else:
-            text_message += 'Дедлайны сегодня: -\n'
+            text_message += "Дедлайны сегодня: -\n"
         metric_user = await db.metrics.get_metric_user(user_id)
         right_answers = metric_user['right_answers']
         total_exercises = metric_user['total_exercises']
         quotient = str(round((right_answers / total_exercises)) * 100) + '%' if total_exercises != 0 else '-'
-        text_message += f'Всего решено заданий на курсе: {metric_user['right_answers']}\nПроцент выполненных заданий: {quotient}'
+        text_message += f"Всего решено заданий на курсе: {metric_user['right_answers']}\nПроцент выполненных заданий: {quotient}"
         return text_message, command_menu
     elif user_data['role'] == 'admin':
         command_menu = InlineKeyboardMarkup(inline_keyboard=[

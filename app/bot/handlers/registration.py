@@ -21,7 +21,7 @@ async def getting_name_user(message: Message, state: FSMContext):
     reg_msg_for_deletion = await state.get_value('reg_msg_for_deletion', [])
     if len(name_user_split) == 2 and len(name_user_split[0]) >= 2 and len(name_user_split[1]) >= 2 and name_user_split[
         0].isalpha and name_user_split[1].isalpha:
-        name_user = f'{name_user_split[0][0].upper()}{name_user_split[0][1:].lower()} {name_user_split[1][0].upper()}{name_user_split[1][1:].lower()}'
+        name_user = f"{name_user_split[0][0].upper()}{name_user_split[0][1:].lower()} {name_user_split[1][0].upper()}{name_user_split[1][1:].lower()}"
         sent_message = await message.answer(
             'Теперь отправь мне свою локацию или название большого города с твоим часовым поясом. Это нужно для корректного отображения дедлайнов. Данные о местонахождении нигде не хранятся.',
             reply_markup=kb.student_keyboards.location_button)
@@ -79,7 +79,7 @@ async def registration_user(message: Message, state: FSMContext):
         if course_user:
             date_of_joining = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             text_message, keyboard = await kb.main_menu.send_command_menu(message.from_user.id)
-            text_message = f'Твой часовой пояс распознан как {timezone_name}\n' + text_message
+            text_message = f"Твой часовой пояс распознан как {timezone_name}\n" + text_message
             for message_id in reg_msg_for_deletion:
                 try:
                     await bot.delete_message(chat_id=message.from_user.id, message_id=message_id)

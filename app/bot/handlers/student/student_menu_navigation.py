@@ -19,13 +19,13 @@ async def opening_list_lives(callback_query: CallbackQuery):
         action = change['action']
         if action == '-1':
             if change['task_title']:
-                text_message += f'{action}❤️ Просрочен дедлайн: {change['task_title']}\n'
+                text_message += f"{action}❤️ Просрочен дедлайн: {change['task_title']}\n"
             else:
-                text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
+                text_message += f"{action}❤️ Индивидуальное обновление жизней\n"
         elif action == '+3':
-            text_message += f'{action}❤️ Новый блок!\n'
+            text_message += f"{action}❤️ Новый блок!\n"
         else:
-            text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
+            text_message += f"{action}❤️ Индивидуальное обновление жизней\n"
     await callback_query.message.edit_text(text=text_message, reply_markup=kb.main_menu.back_button_admin)
 
 
@@ -145,7 +145,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     task_data = await db.tasks.get_data_task(user_id, task_id)
     date_obj = datetime.strptime(task_data['deadline'], '%Y-%m-%d')
     deadline = date_obj.strftime('%d.%m.%Y')
-    text_message = f'Название урока: {task_data['task_title']}\nДедлайн: {deadline}'
+    text_message = f"Название урока: {task_data['task_title']}\nДедлайн: {deadline}"
     session = await db.sessions.get_last_session(user_id, task_id)
     progress_user = await db.progress.get_progress_user(task_id, session['session_id']) if session else \
         await db.progress.get_progress_user(task_id)
@@ -166,7 +166,7 @@ async def open_task(callback_query: CallbackQuery, state: FSMContext):
     if file_work:
         text_message += '\n❗Чтобы завершить эту домшнюю работу, нужно будет отправить файл с решениями'
     if link_files:
-        text_message += f'\n\nФайлы к домашней работе: {link_files}'
+        text_message += f"\n\nФайлы к домашней работе: {link_files}"
     message_abstract_id = state_data.get('message_abstract_id')
     sent_message = await callback_query.message.edit_media(
         media=InputMediaVideo(
@@ -203,7 +203,7 @@ async def mapping_homework(callback_query: CallbackQuery, state: FSMContext):
     quantity_exercise = len(homework)
     current_exercise = 1
     if 'results' in state_data:
-        text_message = f'{homework[current_exercise][0]}\nТвой ответ: {' '.join(map(str, state_data['results'].get(current_exercise, {}).values()))}'
+        text_message = f"{homework[current_exercise][0]}\nТвой ответ: {' '.join(map(str, state_data['results'].get(current_exercise, {}).values()))}"
     else:
         text_message = homework[current_exercise][0]
     homework_message = await callback_query.message.answer(text=text_message,

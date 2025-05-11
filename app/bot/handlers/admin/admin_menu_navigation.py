@@ -55,12 +55,12 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
         action = change['action']
         if action == '-1':
             if change['task_title']:
-                text_message += f'{action}❤️ Просрочен дедлайн к уроку {change['task_title']}\n'
+                text_message += f"{action}❤️ Просрочен дедлайн к уроку {change['task_title']}\n"
             else:
-                text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
+                text_message += f"{action}❤️ Индивидуальное обновление жизней\n"
         elif action == '+3':
-            text_message += f'{action}❤️ Новый блок!\n'
+            text_message += f"{action}❤️ Новый блок!\n"
         else:
-            text_message += f'{action}❤️ Индивидуальное обновление жизней\n'
+            text_message += f"{action}❤️ Индивидуальное обновление жизней\n"
     await callback_query.message.edit_text(text_message,
                                            reply_markup=await kb.admin_keyboards.manage_students.get_more_metric(course_id))
