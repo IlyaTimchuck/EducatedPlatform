@@ -76,7 +76,7 @@ class GoogleSheetsClient:
         await self._ensure_authorized('get_exercise')
         ws = await self.spreadsheet.worksheet('add_task')
         exercises = await ws.get_all_values()
-        # await ws.delete_rows(2, len(exercises))
+        await ws.delete_rows(2, len(exercises))
         return exercises[1:]
 
     async def add_user_in_table(self, real_name: str, telegram_username: str, course_title: str, user_id: int,

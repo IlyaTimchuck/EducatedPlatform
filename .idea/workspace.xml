@@ -4,11 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="правка кавычек в main_menu.py">
-      <change beforePath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EducatedPlatform.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="правка кавычек 3">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/main_menu.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -386,7 +383,31 @@
       <option name="project" value="LOCAL" />
       <updated>1746976293470</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="правка кавычек в main_menu.py">
+      <option name="closed" value="true" />
+      <created>1746976613884</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1746976613884</updated>
+    </task>
+    <task id="LOCAL-00015" summary="правка кавычек в main_menu.py">
+      <option name="closed" value="true" />
+      <created>1746976792912</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1746976792912</updated>
+    </task>
+    <task id="LOCAL-00016" summary="правка кавычек 3">
+      <option name="closed" value="true" />
+      <created>1746976906883</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1746976906884</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -410,6 +431,7 @@
     <MESSAGE value="исправлены кавчки в main_menu.py для корректной работы на сервере" />
     <MESSAGE value="произведена замена всех одинарных кавычек на двойные в f-строках для корректной работы кода на чисто python" />
     <MESSAGE value="правка кавычек в main_menu.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="правка кавычек в main_menu.py" />
+    <MESSAGE value="правка кавычек 3" />
+    <option name="LAST_COMMIT_MESSAGE" value="правка кавычек 3" />
   </component>
 </project>
