@@ -12,9 +12,9 @@ async def send_command_menu(user_id: int):
         ])
         lives = user_data['lives']
         deadline_today = await db.deadlines.get_today_deadline_for_keyboard(user_id)
-        text_message = f'Текущее количество жизней: {lives * '❤️'}\n'
+        text_message = f'Текущее количество жизней: {lives * "❤️"}\n'
         if deadline_today:
-            text_message += f'Дедлайны сегодня: {', '.join(task['task_title'] for task in deadline_today)}\n'
+            text_message += f'Дедлайны сегодня: {', '.join(task["task_title"] for task in deadline_today)}\n'
         else:
             text_message += 'Дедлайны сегодня: -\n'
         metric_user = await db.metrics.get_metric_user(user_id)
