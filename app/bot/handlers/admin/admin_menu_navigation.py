@@ -42,7 +42,7 @@ async def process_increase_block(callback_query: CallbackQuery, state: FSMContex
     right_answers = metrics_user['right_answers']
     total_exercises = metrics_user['total_exercises']
     quotient = str(round((right_answers / total_exercises)) * 100) + '%' if total_exercises != 0 else '-'
-    history_lives_user = await db.metrics.get_history_lives_user(callback_query.from_user.id)
+    history_lives_user = await db.metrics.get_history_lives_user(user_id)
 
     text_message = f'''Метрики пользователя 📊
     

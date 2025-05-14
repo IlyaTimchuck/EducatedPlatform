@@ -4,13 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="бот полностью готов к работе на сервере">
+    <list default="true" id="72d8baad-2a73-484a-8cc9-4ec8f1a86f25" name="Changes" comment="исправлены баги с открытием списка блоков, кнопкой завершить задания, удалением лишнего файла при отправке рабочего файла">
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_05_05_2025_13_23_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_05_05_2025_13_23__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_07_05_2025_14_23_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_07_05_2025_14_23__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/admin/admin_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/homework.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/handlers/student/student_menu_navigation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/progress.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/keyboards/student_keyboards.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/bot/infrastructure/database/metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/bot/infrastructure/database/metrics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -420,7 +422,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746977851781</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="исправлены баги с открытием списка блоков, кнопкой завершить задания, удалением лишнего файла при отправке рабочего файла">
+      <option name="closed" value="true" />
+      <created>1746995604616</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1746995604616</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -446,6 +456,7 @@
     <MESSAGE value="правка кавычек в main_menu.py" />
     <MESSAGE value="правка кавычек 3" />
     <MESSAGE value="бот полностью готов к работе на сервере" />
-    <option name="LAST_COMMIT_MESSAGE" value="бот полностью готов к работе на сервере" />
+    <MESSAGE value="исправлены баги с открытием списка блоков, кнопкой завершить задания, удалением лишнего файла при отправке рабочего файла" />
+    <option name="LAST_COMMIT_MESSAGE" value="исправлены баги с открытием списка блоков, кнопкой завершить задания, удалением лишнего файла при отправке рабочего файла" />
   </component>
 </project>

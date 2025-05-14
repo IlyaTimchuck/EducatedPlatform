@@ -32,7 +32,7 @@ async def get_history_lives_user(user_id: int) -> list:
     query = '''SELECT h.lives_after_action, h.action, t.task_title
                FROM history_of_lives h
                LEFT JOIN tasks t ON t.task_id = h.task_id
-               WHERE h.user_id = ? OR h.user_id = ?'''
-    async with con.execute(query, (user_id, 'all_users')) as cursor:
+               WHERE h.user_id = ?'''
+    async with con.execute(query, (user_id, )) as cursor:
         result = await cursor.fetchall()
         return [dict(x) for x in result] if result else []
